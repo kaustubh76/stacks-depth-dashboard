@@ -31,6 +31,15 @@ export function int(n: number | null | undefined): string {
   return Math.round(n).toLocaleString("en-US");
 }
 
+/** Compact "updated Ns ago" label from a timestamp (ms) vs now (ms). */
+export function ago(ts: number | null | undefined, now: number): string {
+  if (!ts) return "—";
+  const s = Math.max(0, Math.round((now - ts) / 1000));
+  if (s < 60) return `${s}s ago`;
+  if (s < 3600) return `${Math.round(s / 60)}m ago`;
+  return `${Math.round(s / 3600)}h ago`;
+}
+
 /** Truncate a long digest/hash for display. */
 export function shortHash(h: string | null | undefined): string {
   if (!h) return "—";

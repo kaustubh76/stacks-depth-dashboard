@@ -1,16 +1,26 @@
-import type { Verdict } from "../../api/types";
+import type { DepthLadder, Verdict } from "../../api/types";
+import { recomputeVerdict } from "../../lib/depth";
 import StatusPill from "../ui/StatusPill";
-import { usd0 } from "../../lib/format";
+import { usd0, pct } from "../../lib/format";
 
-/** The headline finding, with a coloured left rail keyed to viability. */
-export default function VerdictBanner({ verdict }: { verdict: Verdict }) {
+/** The headline finding (snapshot @ ≤2%), with a coloured rail + a live recompute row that
+ * tracks the slippage-budget slider when it moves off 2%. */
+export default function VerdictBanner({
+  verdict,
+  ladders,
+  budget,
+}: {
+  verdict: Verdict;
+  ladders: DepthLadder[];
+  budget: number;
+}) {
   const viable = verdict.rotation_viable;
   const rail = viable ? "#43b581" : "#e0728a";
+  const offSnapshot = Math.abs(budget - 0.02) > 1e-6;
+  const rv = offSnapshot ? recomputeVerdict(ladders, budget, verdict.thresholds) : null;
+
   return (
-    <section
-      className="glow-card relative mb-5 p-5 pl-6"
-      style={{ boxShadow: `6px 6px 0 0 ${rail}, var(--card-ambient)` }}
-    >
+    <section className="glow-card relative mb-5 p-5 pl-6" style={{ boxShadow: `6px 6px 0 0 ${rail}, var(--card-ambient)` }}>
       <span className="absolute inset-y-0 left-0 w-[6px]" style={{ background: rail }} />
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <StatusPill tone={viable ? "up" : "down"} dot srText={viable ? "rotation viable" : "rotation not viable"}>
@@ -25,6 +35,21 @@ export default function VerdictBanner({ verdict }: { verdict: Verdict }) {
         </span>
       </div>
       <p className="text-[15px] leading-relaxed text-sub">{verdict.finding}</p>
+
+      {rv && (
+        <div className="mt-3 flex flex-wrap items-center gap-2 rounded-sm border border-cool/30 bg-cool/5 px-3 py-2">
+          <StatusPill tone="info" srText="recomputed at your chosen budget">
+            at ≤{pct(budget, budget < 0.01 ? 2 : 1)}
+          </StatusPill>
+          <span className="font-mono text-[12px] text-sub">
+            {usd0(rv.movable)} movable · {rv.nTradeable}/{verdict.thresholds.min_independent_assets} tradeable ·{" "}
+            <span style={{ color: rv.rotationViable ? "#43b581" : "#e0728a" }}>
+              {rv.rotationViable ? "rotation viable" : "still not viable"}
+            </span>
+            {rv.tradeable.length > 0 && <span className="text-muted"> ({rv.tradeable.join(", ")})</span>}
+          </span>
+        </div>
+      )}
     </section>
   );
 }
