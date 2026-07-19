@@ -142,7 +142,7 @@ export default function LiveCrossCheck({
             "—"
           )}
         </LiveTile>
-        <LiveTile label="DEX 24h volume" source={`DexScreener · ${live.dexPairs ?? "—"} pairs`} updated={live.updatedDex} now={now}>
+        <LiveTile label="DEX 24h volume" source={`DexScreener · ${live.dexPairs.length || "—"} pairs`} updated={live.updatedDex} now={now}>
           {live.dexVolume24h !== null ? (
             <>
               <AnimatedNumber value={live.dexVolume24h} duration={0.6} format={(n) => usd0(n)} />

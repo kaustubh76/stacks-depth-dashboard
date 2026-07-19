@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import type { LivePair } from "../lib/live";
+
 // Genuine client-side live data from public, CORS-open endpoints. This is the ONLY live
 // surface — it never overwrites a snapshot number; it feeds the clearly-labelled "Live
 // cross-check" strip. Every fetch is best-effort (AbortController + try/catch): on any
@@ -16,7 +18,8 @@ export interface LiveState {
   stx: LivePrice | null; // CoinGecko
   btc: LivePrice | null; // CoinGecko
   dexVolume24h: number | null; // Σ DexScreener Stacks pairs
-  dexPairs: number | null;
+  dexPairs: LivePair[]; // structured per-pair live data (liquidity/volume/price/link)
+  dexLiquidityTotal: number | null; // Σ live liquidity over Stacks pairs
   stxHistory: number[]; // rolling STX price samples (grows each poll → live sparkline)
   heightHistory: number[]; // rolling chain-height samples (on change)
   updatedChain: number | null; // epoch ms of last success, per source
@@ -34,7 +37,8 @@ const EMPTY: LiveState = {
   stx: null,
   btc: null,
   dexVolume24h: null,
-  dexPairs: null,
+  dexPairs: [],
+  dexLiquidityTotal: null,
   stxHistory: [],
   heightHistory: [],
   updatedChain: null,
@@ -116,11 +120,28 @@ export function useLiveData(enabled: boolean): { live: LiveState; refresh: () =>
       const d = (await getJson(DEXSCREENER, ac.signal)) as { pairs?: Array<Record<string, unknown>> } | null;
       if (d && Array.isArray(d.pairs)) {
         const stacks = d.pairs.filter((p) => p.chainId === "stacks");
-        const vol = stacks.reduce((s, p) => {
-          const v = p.volume as { h24?: unknown } | undefined;
-          return s + (num(v?.h24) ?? 0);
-        }, 0);
-        patch({ dexVolume24h: vol, dexPairs: stacks.length, updatedDex: Date.now() });
+        const pairs: LivePair[] = stacks.map((p) => {
+          const bt = p.baseToken as { symbol?: unknown } | undefined;
+          const qt = p.quoteToken as { symbol?: unknown } | undefined;
+          const liq = p.liquidity as { usd?: unknown } | undefined;
+          const vol = p.volume as { h24?: unknown } | undefined;
+          const pu = typeof p.priceUsd === "string" ? parseFloat(p.priceUsd) : (p.priceUsd as number | undefined);
+          return {
+            venue: typeof p.dexId === "string" ? p.dexId : "",
+            base: typeof bt?.symbol === "string" ? bt.symbol : "",
+            quote: typeof qt?.symbol === "string" ? qt.symbol : "",
+            liqUsd: num(liq?.usd),
+            vol24: num(vol?.h24),
+            priceUsd: num(pu),
+            url: typeof p.url === "string" ? p.url : null,
+          };
+        });
+        patch({
+          dexVolume24h: pairs.reduce((s, p) => s + (p.vol24 ?? 0), 0),
+          dexLiquidityTotal: pairs.reduce((s, p) => s + (p.liqUsd ?? 0), 0),
+          dexPairs: pairs,
+          updatedDex: Date.now(),
+        });
       }
     };
 

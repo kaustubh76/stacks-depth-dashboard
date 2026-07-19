@@ -13,6 +13,7 @@ import Cheatsheet from "./components/cockpit/Cheatsheet";
 import Tour from "./components/cockpit/Tour";
 import Masthead from "./components/panels/Masthead";
 import LiveCrossCheck from "./components/panels/LiveCrossCheck";
+import LiveDepthDrift from "./components/panels/LiveDepthDrift";
 import VerdictBanner from "./components/panels/VerdictBanner";
 import HeadlineTiles from "./components/panels/HeadlineTiles";
 import SlippageBudget from "./components/panels/SlippageBudget";
@@ -115,9 +116,15 @@ export default function App() {
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <Masthead asOf={summary.as_of_date} live={false} />
 
-        <div className="mb-5">
+        <div className="mb-4">
           <Panel label="Live cross-check">
             <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} />
+          </Panel>
+        </div>
+
+        <div className="mb-5">
+          <Panel label="Live depth drift">
+            <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} />
           </Panel>
         </div>
 
