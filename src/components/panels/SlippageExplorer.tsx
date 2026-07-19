@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 
 import type { DepthLadder } from "../../api/types";
-import { slippageAt, realizedForNotional } from "../../lib/depth";
+import { poolKey, slippageAt, realizedForNotional } from "../../lib/depth";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import { usd0, pct } from "../../lib/format";
@@ -26,25 +26,26 @@ const xOf = (n: number) => L + (Math.min(Math.max(Math.log10(n), 2), 5) - 2) / 3
 const yOf = (s: number) => T + (1 - Math.sqrt(Math.min(s, SLIP_CAP) / SLIP_CAP)) * PH;
 const nOfFrac = (frac: number) => Math.round(10 ** (2 + Math.min(Math.max(frac, 0), 1) * 3));
 
-function poolKey(l: DepthLadder) {
-  return `${l.pool_id}:${l.major_symbol}`;
-}
-
 /**
  * The hero interaction. Drag anywhere on the chart to set a trade size; the pinned line +
  * side readout show the exact slippage each pool would charge and which assets clear the
- * current slippage budget. Hover shows a live crosshair preview. Legend chips toggle pools.
+ * current slippage budget. Hover shows a live crosshair preview. Legend chips toggle pools;
+ * a `focus` key (set from the Pool browser's "curve" action) isolates one pool's curve.
  */
 export default function SlippageExplorer({
   ladders,
   moveX,
   setMoveX,
   budget,
+  focus,
+  onClearFocus,
 }: {
   ladders: DepthLadder[];
   moveX: number;
   setMoveX: (n: number) => void;
   budget: number;
+  focus: string | null;
+  onClearFocus: () => void;
 }) {
   const reduce = useReducedMotion();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -54,9 +55,18 @@ export default function SlippageExplorer({
   const [showAll, setShowAll] = useState(false);
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
 
-  // Default to the deepest ~7 pools; "show all" reveals the long tail.
-  const shown = useMemo(() => (showAll ? ladders : ladders.slice(0, 7)), [ladders, showAll]);
+  // Default to the deepest ~7 pools; "show all" reveals the long tail. A focused pool is
+  // always drawn, even when it sits outside the top 7.
+  const shown = useMemo(() => {
+    const base = showAll ? ladders : ladders.slice(0, 7);
+    if (focus && !base.some((l) => poolKey(l) === focus)) {
+      const f = ladders.find((l) => poolKey(l) === focus);
+      if (f) return [...base, f];
+    }
+    return base;
+  }, [ladders, showAll, focus]);
   const visible = shown.filter((l) => !hidden.has(poolKey(l)));
+  const focused = focus ? ladders.find((l) => poolKey(l) === focus) ?? null : null;
 
   const colorFor = useMemo(() => {
     const m = new Map<string, string>();
@@ -82,13 +92,25 @@ export default function SlippageExplorer({
       tier="hero"
       accent="#38b2c4"
       right={
-        <button
-          type="button"
-          onClick={() => setShowAll((v) => !v)}
-          className="rounded-sm border border-edge px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
-        >
-          {showAll ? `top 7` : `all ${ladders.length}`}
-        </button>
+        <span className="flex items-center gap-2">
+          {focused && (
+            <button
+              type="button"
+              onClick={onClearFocus}
+              title="clear the focused pool"
+              className="rounded-sm border border-brand bg-brand/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-brand transition hover:bg-brand/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              focus: {focused.symbol} ✕
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowAll((v) => !v)}
+            className="rounded-sm border border-edge px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+          >
+            {showAll ? `top 7` : `all ${ladders.length}`}
+          </button>
+        </span>
       }
     >
       <p className="mb-3 max-w-2xl text-[12px] leading-snug text-muted">
@@ -158,22 +180,25 @@ export default function SlippageExplorer({
             {hoverN && !dragging && (
               <line x1={xOf(hoverN)} y1={T} x2={xOf(hoverN)} y2={T + PH} stroke="rgb(var(--c-muted))" strokeWidth={1} opacity={0.4} />
             )}
-            {/* curves — draw themselves in on load */}
+            {/* curves — draw themselves in on load; focus isolates one pool */}
             {visible.map((l, i) => {
-              const color = colorFor.get(poolKey(l))!;
+              const key = poolKey(l);
+              const color = colorFor.get(key)!;
+              const isFocused = focus === key;
+              const dimmed = focus !== null && !isFocused;
               const pts = l.points
                 .map((p) => `${xOf(p.notional).toFixed(1)},${yOf(p.slippage).toFixed(1)}`)
                 .join(" ");
               return (
                 <motion.polyline
-                  key={poolKey(l)}
+                  key={key}
                   points={pts}
                   fill="none"
                   stroke={color}
-                  strokeWidth={1.9}
+                  strokeWidth={isFocused ? 3 : 1.9}
                   strokeLinejoin="round"
                   initial={reduce ? false : { pathLength: 0, opacity: 0 }}
-                  animate={{ pathLength: 1, opacity: 0.92 }}
+                  animate={{ pathLength: 1, opacity: dimmed ? 0.25 : isFocused ? 1 : 0.92 }}
                   transition={{ duration: 0.9, delay: Math.min(i, 8) * 0.05, ease: "easeOut" }}
                 />
               );
@@ -183,8 +208,21 @@ export default function SlippageExplorer({
             {!touched && <circle cx={xOf(moveX)} cy={T} r={7} fill="none" stroke="#38b2c4" strokeWidth={1.5} className="animate-pulseDot" />}
             <circle cx={xOf(moveX)} cy={T} r={4} fill="var(--thick-line)" />
             {visible.map((l) => {
+              const key = poolKey(l);
               const s = slippageAt(l.points, moveX);
-              return <circle key={`d-${poolKey(l)}`} cx={xOf(moveX)} cy={yOf(s)} r={3} fill={colorFor.get(poolKey(l))!} stroke="var(--canvas)" strokeWidth={1} />;
+              const dimmed = focus !== null && focus !== key;
+              return (
+                <circle
+                  key={`d-${key}`}
+                  cx={xOf(moveX)}
+                  cy={yOf(s)}
+                  r={focus === key ? 4 : 3}
+                  fill={colorFor.get(key)!}
+                  stroke="var(--canvas)"
+                  strokeWidth={1}
+                  opacity={dimmed ? 0.3 : 1}
+                />
+              );
             })}
             <text x={xOf(moveX)} y={T + PH + 26} fontSize={11} fill="rgb(var(--c-ink))" textAnchor="middle" className="font-mono font-bold">
               {usd0(moveX)}
@@ -196,6 +234,7 @@ export default function SlippageExplorer({
             {shown.map((l) => {
               const key = poolKey(l);
               const off = hidden.has(key);
+              const isFocused = focus === key;
               return (
                 <button
                   key={key}
@@ -208,7 +247,7 @@ export default function SlippageExplorer({
                       return next;
                     })
                   }
-                  className={`flex items-center gap-1.5 rounded-sm px-1 text-[11.5px] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${off ? "opacity-40" : ""}`}
+                  className={`flex items-center gap-1.5 rounded-sm px-1 text-[11.5px] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50 ${off ? "opacity-40" : ""} ${isFocused ? "bg-brand/10 ring-1 ring-brand/50" : ""}`}
                   title={off ? "show" : "hide"}
                 >
                   <i className="inline-block h-[3px] w-3 rounded-sm" style={{ background: colorFor.get(key)! }} />

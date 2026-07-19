@@ -1,24 +1,70 @@
+import { useState } from "react";
+
 import type { Summary } from "../../api/types";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
+import AnimatedNumber from "../ui/AnimatedNumber";
+import { ChipButton } from "../ui/ChipButton";
 import { usd0, pct } from "../../lib/format";
 
-/** The honesty panel: what the vendor feeds got wrong, and how we cross-checked. */
+/** The honesty panel: what the vendor feeds got wrong, and how we cross-checked. The
+ * clean / incl.-flagged toggle shows exactly what the flags are worth — the included
+ * figure is always labelled as NOT the published number. */
 export default function DataQualityPanel({ summary }: { summary: Summary }) {
+  const [inclFlagged, setInclFlagged] = useState(false);
+  const shown = inclFlagged ? summary.volume_24h_usd_total : summary.volume_24h_usd_clean;
+
   return (
-    <Card label="Data quality — what we flagged" tier="supporting">
+    <Card
+      label="Data quality — what we flagged"
+      tier="supporting"
+      right={
+        <span className="flex items-center gap-1.5">
+          <ChipButton active={!inclFlagged} onClick={() => setInclFlagged(false)} ariaLabel="Show the published clean volume figure">
+            clean
+          </ChipButton>
+          <ChipButton active={inclFlagged} onClick={() => setInclFlagged(true)} ariaLabel="Show volume including flagged outliers">
+            incl. flagged
+          </ChipButton>
+        </span>
+      }
+    >
       <p className="mb-3 text-[12px] text-muted">
         The chain is source of truth; vendor APIs are the cross-check. Where they disagreed, we publish the disagreement
         rather than pick silently.
       </p>
+
+      {/* The toggle-driven figure: what the flags are worth. */}
+      <div className="mb-3 rounded-sm border border-edge bg-panel2/60 p-3" data-testid="quality-figure">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="font-display text-2xl font-bold tabular-nums" style={{ color: inclFlagged ? "#d9a23a" : "#43b581" }}>
+            <AnimatedNumber value={shown} format={usd0} duration={0.4} />
+          </span>
+          {inclFlagged ? (
+            <StatusPill tone="warn" srText="includes flagged outlier volume — not the published figure">
+              incl. flagged — not the published figure
+            </StatusPill>
+          ) : (
+            <StatusPill tone="up" srText="the published clean figure">published clean figure</StatusPill>
+          )}
+        </div>
+        <p className="mt-1.5 font-mono text-[11px] text-muted">
+          24h volume · flagged outliers: {usd0(summary.volume_24h_usd_flagged)} across {summary.flagged_pools.length} pool(s)
+        </p>
+      </div>
+
       <div className="flex flex-col gap-3">
         {summary.flagged_pools.map((f) => (
-          <div key={f.pool_id} className="rounded-sm border border-amber/40 bg-panel2 p-3">
+          <div
+            key={f.pool_id}
+            className={`rounded-sm border bg-panel2 p-3 transition-opacity ${inclFlagged ? "border-amber/70" : "border-amber/40 opacity-80"}`}
+          >
             <div className="mb-1 flex items-center gap-2">
               <StatusPill tone="warn" srText="flagged data-quality outlier">
                 volume flag
               </StatusPill>
               <code className="rounded-sm bg-muted/15 px-1 font-mono text-[11px] text-sub">{f.symbol}</code>
+              {inclFlagged && <StatusPill tone="neutral" srText="currently included in the figure above">included above</StatusPill>}
             </div>
             <p className="text-[13px] leading-snug text-sub">
               Reports <b className="text-ink">{usd0(f.volume_24h_usd)}</b> of 24h volume — {f.note}. Excluded from clean

@@ -3,8 +3,16 @@ import { useCallback, useEffect, useState } from "react";
 import { bakedData } from "./api/data";
 import { useScenario } from "./hooks/useHashState";
 import { useLiveData } from "./hooks/useLiveData";
-import { sectionId } from "./lib/sections";
+import { flashSection, sectionId } from "./lib/sections";
+import { FOCUS_PLANNER_EVENT } from "./lib/cockpit";
 import { usd0 } from "./lib/format";
+import { buildScenario, downloadText, poolsCsv, scenarioJson, scenarioSummary } from "./lib/export";
+import { usePoolSelection } from "./hooks/usePoolSelection";
+import TradePlanner from "./components/panels/TradePlanner";
+import PoolBrowser from "./components/panels/PoolBrowser";
+import PoolCompare from "./components/panels/PoolCompare";
+import { ChipButton } from "./components/ui/ChipButton";
+import { useToast } from "./components/ui/Toast";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 import StickyHeader from "./components/StickyHeader";
 import CommandPalette from "./components/cockpit/CommandPalette";
@@ -41,10 +49,12 @@ function Panel({ label, children }: { label: string; children: React.ReactNode }
 export default function App() {
   const data = bakedData();
   const { summary, study, ladders } = data;
-  const { budget, setBudget, moveX, setMoveX, shareLink } = useScenario();
+  const { budget, setBudget, moveX, setMoveX, asset, setAsset, shareLink } = useScenario();
 
   const [liveEnabled, setLiveEnabled] = useState(true);
   const { live, refresh } = useLiveData(liveEnabled);
+  const selection = usePoolSelection();
+  const { toast } = useToast();
 
   const copyLink = useCallback(() => {
     try {
@@ -53,6 +63,38 @@ export default function App() {
       /* clipboard blocked — hash is still in the address bar */
     }
   }, [shareLink]);
+
+  /** The current scenario as a copyable one-paragraph blurb (planner + presets share it). */
+  const planSummary = useCallback(
+    () => scenarioSummary(buildScenario(ladders, summary, study, budget, moveX, asset), shareLink()),
+    [ladders, summary, study, budget, moveX, asset, shareLink],
+  );
+
+  // Export actions — shared by the Pool browser header and the ⌘K palette.
+  const downloadCsv = useCallback(() => {
+    downloadText(
+      `stacks-depth-pools-${summary.as_of_date}-at-${(budget * 100).toFixed(2)}pct.csv`,
+      "text/csv",
+      poolsCsv(ladders, budget),
+    );
+  }, [ladders, summary, budget]);
+
+  const downloadScenarioJson = useCallback(() => {
+    downloadText(
+      `stacks-depth-scenario-${summary.as_of_date}.json`,
+      "application/json",
+      scenarioJson(buildScenario(ladders, summary, study, budget, moveX, asset)),
+    );
+  }, [ladders, summary, study, budget, moveX, asset]);
+
+  const copySummary = useCallback(() => {
+    try {
+      void navigator.clipboard?.writeText(planSummary());
+      toast.success("Scenario summary copied");
+    } catch {
+      toast.warn("Clipboard unavailable — use the share link instead");
+    }
+  }, [planSummary, toast]);
 
   // Self-demonstrating intro: ~1s after load, gently sweep the budget once so the whole page
   // visibly reacts (movable figure, verdict, bars, table) — proving it's interactive. Aborts on
@@ -108,7 +150,18 @@ export default function App() {
       />
 
       {/* Cockpit overlays — self-wire via the window-event bus */}
-      <CommandPalette actions={{ refreshLive: refresh, copyLink }} />
+      <CommandPalette
+        actions={{
+          refreshLive: refresh,
+          copyLink,
+          downloadCsv,
+          planTrade: () => {
+            flashSection(sectionId("Trade planner"));
+            window.dispatchEvent(new Event(FOCUS_PLANNER_EVENT));
+          },
+          comparePools: () => flashSection(sectionId("Pool compare")),
+        }}
+      />
       <KeyboardLayer onRefreshLive={refresh} />
       <Cheatsheet />
       <Tour />
@@ -138,14 +191,54 @@ export default function App() {
 
         {/* Interactive core */}
         <div className="sticky top-12 z-30">
-          <SlippageBudget ladders={ladders} thresholds={study.verdict.thresholds} budget={budget} setBudget={setBudget} />
+          <Panel label="Slippage budget">
+            <SlippageBudget ladders={ladders} thresholds={study.verdict.thresholds} budget={budget} setBudget={setBudget} />
+          </Panel>
         </div>
 
-        <ScenarioPresets budget={budget} moveX={moveX} setBudget={setBudget} setMoveX={setMoveX} />
+        <Panel label="Scenarios">
+          <ScenarioPresets
+            budget={budget}
+            moveX={moveX}
+            setBudget={setBudget}
+            setMoveX={setMoveX}
+            actions={
+              <span className="flex items-center gap-1.5">
+                <ChipButton onClick={copySummary} title="copy a one-paragraph summary of the current scenario" ariaLabel="Copy scenario summary">
+                  copy summary
+                </ChipButton>
+                <ChipButton onClick={downloadScenarioJson} title="download the current scenario as JSON" ariaLabel="Download scenario JSON">
+                  ⬇ .json
+                </ChipButton>
+              </span>
+            }
+          />
+        </Panel>
+
+        <div className="mb-4">
+          <Panel label="Trade planner">
+            <TradePlanner
+              ladders={ladders}
+              budget={budget}
+              moveX={moveX}
+              setMoveX={setMoveX}
+              asset={asset}
+              setAsset={setAsset}
+              planSummary={planSummary}
+            />
+          </Panel>
+        </div>
 
         <div className="mb-4">
           <Panel label="Slippage explorer">
-            <SlippageExplorer ladders={ladders} moveX={moveX} setMoveX={setMoveX} budget={budget} />
+            <SlippageExplorer
+              ladders={ladders}
+              moveX={moveX}
+              setMoveX={setMoveX}
+              budget={budget}
+              focus={selection.focusKey}
+              onClearFocus={() => selection.setFocus(null)}
+            />
           </Panel>
         </div>
 
@@ -155,9 +248,27 @@ export default function App() {
           </Panel>
         </div>
 
+        <div className="mb-4">
+          <Panel label="Pool browser">
+            <PoolBrowser
+              ladders={ladders}
+              budget={budget}
+              selection={selection}
+              onDownloadCsv={downloadCsv}
+              onDownloadJson={downloadScenarioJson}
+            />
+          </Panel>
+        </div>
+
+        <div className="mb-4">
+          <Panel label="Pool compare">
+            <PoolCompare ladders={ladders} budget={budget} moveX={moveX} selection={selection} />
+          </Panel>
+        </div>
+
         <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
           <Panel label="Movable by budget">
-            <MovableByThreshold depth={study.depth_index} ladders={ladders} budget={budget} />
+            <MovableByThreshold depth={study.depth_index} ladders={ladders} budget={budget} setBudget={setBudget} />
           </Panel>
           <Panel label="Asset depth">
             <AssetDepthTable byAsset={study.depth_index.by_asset} verdict={study.verdict} ladders={ladders} budget={budget} />
@@ -175,7 +286,7 @@ export default function App() {
 
         <div className="mb-4">
           <Panel label="Rotation backtest">
-            <RotationBacktest audit={study.audit} />
+            <RotationBacktest audit={study.audit} budget={budget} />
           </Panel>
         </div>
 

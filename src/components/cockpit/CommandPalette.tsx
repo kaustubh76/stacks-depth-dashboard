@@ -9,6 +9,9 @@ import { useToast } from "../ui/Toast";
 export interface PaletteActions {
   refreshLive: () => void;
   copyLink: () => void;
+  downloadCsv: () => void;
+  planTrade: () => void;
+  comparePools: () => void;
 }
 
 /** Fire from anywhere (e.g. a header chip) to open the palette without prop-drilling. */
@@ -97,6 +100,9 @@ export default function CommandPalette({ actions }: { actions: PaletteActions })
     const actionCmds: Command[] = [
       act("Refresh live data", () => { actions.refreshLive(); toast.info("Refreshing live feeds…", { key: "cmd-refresh", ttl: 1400 }); }, "reload poll chain price volume"),
       act("Copy shareable link", () => { actions.copyLink(); toast.success("Link copied — the current view is in the URL.", { key: "cmd-link" }); }, "share url state deep link"),
+      act("Plan a trade", actions.planTrade, "planner size route move asset best pool"),
+      act("Compare pools", actions.comparePools, "side by side tray versus curves"),
+      act("Download pool CSV", () => { actions.downloadCsv(); toast.success("Pool table downloading…", { key: "cmd-csv" }); }, "export table spreadsheet pools depth save"),
       act(`Switch to ${theme === "dark" ? "light" : "dark"} theme`, toggleTheme, "dark light appearance"),
       act("Take the guided tour", () => window.dispatchEvent(new Event(START_TOUR_EVENT)), "guide walkthrough presenter demo"),
       act("Show keyboard shortcuts", () => window.dispatchEvent(new Event(OPEN_CHEATSHEET_EVENT)), "keys cheatsheet help hotkeys"),

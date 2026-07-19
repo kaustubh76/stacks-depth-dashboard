@@ -5,7 +5,7 @@ import { flashSection, sectionId } from "../lib/sections";
 import { OPEN_PALETTE_EVENT } from "./cockpit/CommandPalette";
 import StatusPill from "./ui/StatusPill";
 
-const CHIPS = ["Slippage explorer", "Depth calculator", "Verdict", "Data quality"];
+const CHIPS = ["Trade planner", "Slippage explorer", "Pool browser", "Verdict", "Data quality"];
 
 /** Compact bar that slides in after scrolling past the masthead: the verdict at a glance,
  * quick jumps, the ⌘K hint, and theme/live toggles. */

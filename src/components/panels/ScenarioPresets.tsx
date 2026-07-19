@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { usd0, pct } from "../../lib/format";
 
 interface Preset {
@@ -22,11 +24,14 @@ export default function ScenarioPresets({
   moveX,
   setBudget,
   setMoveX,
+  actions,
 }: {
   budget: number;
   moveX: number;
   setBudget: (b: number) => void;
   setMoveX: (n: number) => void;
+  /** Optional action chips (copy summary / download scenario) rendered after the presets. */
+  actions?: ReactNode;
 }) {
   const apply = (p: Preset) => {
     setBudget(p.b);
@@ -60,6 +65,7 @@ export default function ScenarioPresets({
       <span className="ml-auto font-mono text-[10px] text-muted">
         now: {usd0(moveX)} @ ≤{pct(budget, budget < 0.01 ? 2 : 1)}
       </span>
+      {actions}
     </div>
   );
 }

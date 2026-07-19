@@ -10,6 +10,13 @@
 
 import type { DepthLadder, SlippagePoint } from "../api/types";
 
+/**
+ * Canonical ladder identity. `venue:pool_id` alone is NOT unique — the bitflow stableswap
+ * pools appear once per major side — so every selection surface (explorer focus, browser
+ * rows, compare tray) must key on the full triple.
+ */
+export const poolKey = (l: DepthLadder): string => `${l.venue}:${l.pool_id}:${l.major_symbol}`;
+
 /** Linear-interpolate the slippage a single pool charges at an arbitrary trade size. */
 export function slippageAt(points: SlippagePoint[], notional: number): number {
   if (points.length === 0) return 1;
@@ -126,6 +133,78 @@ export function realizedForNotional(ladders: DepthLadder[], notional: number): A
     }
   }
   return rows.sort((a, b) => a.slippage - b.slippage);
+}
+
+export interface TradeLeg {
+  key: string; // poolKey
+  venue: string;
+  symbol: string;
+  notional: number;
+  slippage: number; // slippage on this leg's notional through this pool
+}
+
+export interface TradePlan {
+  asset: string;
+  size: number;
+  budget: number;
+  /** Lowest-slippage single pool at `size` (null when the asset has no pools). */
+  best: { leg: TradeLeg; feasible: boolean; withinBudget: boolean } | null;
+  /** Greedy split across pools at ≤ budget — only computed when one pool can't do it. */
+  split: { legs: TradeLeg[]; filled: number; unfilled: number; avgSlippage: number } | null;
+  verdict: "single" | "split" | "partial" | "no-fill";
+}
+
+/**
+ * Route a trade: the best single pool for `size`, and — when that pool alone can't clear
+ * the slippage budget — a greedy split (deepest-at-budget pools first) showing how far the
+ * ecosystem can actually absorb it. Pure function over the frozen ladders.
+ */
+export function planTrade(ladders: DepthLadder[], asset: string, size: number, budget: number): TradePlan {
+  const pools = ladders.filter((l) => l.major_symbol === asset);
+  const base: TradePlan = { asset, size, budget, best: null, split: null, verdict: "no-fill" };
+  if (pools.length === 0 || size <= 0) return base;
+
+  let bestPool: DepthLadder | null = null;
+  let bestSlip = Infinity;
+  for (const p of pools) {
+    const slip = slippageAt(p.points, size);
+    if (slip < bestSlip) {
+      bestSlip = slip;
+      bestPool = p;
+    }
+  }
+  if (!bestPool) return base;
+  const feasible = size <= bestPool.points[bestPool.points.length - 1].notional;
+  const withinBudget = feasible && bestSlip <= budget;
+  base.best = {
+    leg: { key: poolKey(bestPool), venue: bestPool.venue, symbol: bestPool.symbol, notional: size, slippage: bestSlip },
+    feasible,
+    withinBudget,
+  };
+  if (withinBudget) {
+    base.verdict = "single";
+    return base;
+  }
+
+  // Greedy split: fill from the pools that absorb the most at ≤ budget.
+  const ranked = pools
+    .map((p) => ({ p, cap: maxNotionalAt(p.points, budget) }))
+    .filter((r) => r.cap > 0)
+    .sort((a, b) => b.cap - a.cap);
+  const legs: TradeLeg[] = [];
+  let remaining = size;
+  for (const { p, cap } of ranked) {
+    if (remaining <= 0) break;
+    const notional = Math.min(remaining, cap);
+    legs.push({ key: poolKey(p), venue: p.venue, symbol: p.symbol, notional, slippage: slippageAt(p.points, notional) });
+    remaining -= notional;
+  }
+  const filled = size - remaining;
+  if (filled <= 0) return base; // verdict stays no-fill
+  const avgSlippage = legs.reduce((s, l) => s + l.slippage * l.notional, 0) / filled;
+  base.split = { legs, filled, unfilled: remaining, avgSlippage };
+  base.verdict = remaining <= 1e-9 ? "split" : "partial";
+  return base;
 }
 
 export interface RecomputedVerdict {
