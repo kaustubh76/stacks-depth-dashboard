@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { bakedData } from "./api/data";
 import { useScenario } from "./hooks/useHashState";
@@ -16,6 +16,7 @@ import LiveCrossCheck from "./components/panels/LiveCrossCheck";
 import VerdictBanner from "./components/panels/VerdictBanner";
 import HeadlineTiles from "./components/panels/HeadlineTiles";
 import SlippageBudget from "./components/panels/SlippageBudget";
+import ScenarioPresets from "./components/panels/ScenarioPresets";
 import SlippageExplorer from "./components/panels/SlippageExplorer";
 import DepthCalculator from "./components/panels/DepthCalculator";
 import MovableByThreshold from "./components/panels/MovableByThreshold";
@@ -51,6 +52,50 @@ export default function App() {
       /* clipboard blocked — hash is still in the address bar */
     }
   }, [shareLink]);
+
+  // Self-demonstrating intro: ~1s after load, gently sweep the budget once so the whole page
+  // visibly reacts (movable figure, verdict, bars, table) — proving it's interactive. Aborts on
+  // the first user input; skipped under reduced-motion or when arriving on a deep-linked budget.
+  useEffect(() => {
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce || Math.abs(budget - 0.02) > 1e-6) return; // don't override a shared/deep-linked view
+    let raf = 0;
+    let start = 0;
+    let done = false;
+    const DUR = 1500;
+    const LO = 0.02;
+    const HI = 0.038;
+    const cleanup = () => {
+      window.removeEventListener("pointerdown", abort);
+      window.removeEventListener("keydown", abort);
+    };
+    function abort() {
+      done = true;
+      cancelAnimationFrame(raf);
+      cleanup();
+      setBudget(0.02);
+    }
+    const step = (t: number) => {
+      if (done) return;
+      if (!start) start = t;
+      const p = Math.min((t - start) / DUR, 1);
+      setBudget(LO + (HI - LO) * Math.sin(p * Math.PI)); // out-and-back
+      if (p < 1) raf = requestAnimationFrame(step);
+      else { setBudget(0.02); cleanup(); }
+    };
+    const timer = window.setTimeout(() => {
+      window.addEventListener("pointerdown", abort, { once: true });
+      window.addEventListener("keydown", abort, { once: true });
+      raf = requestAnimationFrame(step);
+    }, 950);
+    return () => {
+      done = true;
+      window.clearTimeout(timer);
+      cancelAnimationFrame(raf);
+      cleanup();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <>
@@ -88,6 +133,8 @@ export default function App() {
         <div className="sticky top-12 z-30">
           <SlippageBudget ladders={ladders} thresholds={study.verdict.thresholds} budget={budget} setBudget={setBudget} />
         </div>
+
+        <ScenarioPresets budget={budget} moveX={moveX} setBudget={setBudget} setMoveX={setMoveX} />
 
         <div className="mb-4">
           <Panel label="Slippage explorer">

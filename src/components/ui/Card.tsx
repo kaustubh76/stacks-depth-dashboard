@@ -64,7 +64,7 @@ export default function Card({
     <motion.section
       initial={reduce ? false : { opacity: 0, y: 10 }}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-12% 0px" }}
+      viewport={{ once: true, margin: "20% 0px" }}
       transition={{ duration: 0.4, ease: "easeOut" }}
       style={heroShadow}
       className={`glow-card relative ${pad} ${className}`}

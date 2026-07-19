@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 import type { DepthLadder, Verdict } from "../../api/types";
 import { recomputeVerdict } from "../../lib/depth";
 import { BUDGET_MIN, BUDGET_MAX } from "../../hooks/useHashState";
@@ -25,8 +27,10 @@ export default function SlippageBudget({
   budget: number;
   setBudget: (b: number) => void;
 }) {
+  const [active, setActive] = useState(false);
   const v = recomputeVerdict(ladders, budget, thresholds);
   const atSnapshot = Math.abs(budget - 0.02) < 1e-6;
+  const frac = Math.min(Math.max((budget - BUDGET_MIN) / (BUDGET_MAX - BUDGET_MIN), 0), 1);
 
   return (
     <div className="glow-card mb-4 p-4" id="budget-control">
@@ -56,16 +60,31 @@ export default function SlippageBudget({
         </div>
       </div>
 
-      <input
-        type="range"
-        min={BUDGET_MIN}
-        max={BUDGET_MAX}
-        step={0.0005}
-        value={budget}
-        onChange={(e) => setBudget(parseFloat(e.target.value))}
-        aria-label="Slippage budget"
-        className="mt-3 w-full accent-brand"
-      />
+      <div className="relative mt-4">
+        <div
+          className={`pointer-events-none absolute -top-6 z-10 -translate-x-1/2 rounded-sm border border-brand/50 bg-panel px-1.5 py-0.5 font-mono text-[10px] font-bold text-brand shadow-brut-sm transition-opacity duration-150 ${
+            active ? "opacity-100" : "opacity-0"
+          }`}
+          style={{ left: `calc(${frac * 100}% )` }}
+        >
+          ≤{pct(budget, budget < 0.01 ? 2 : 1)}
+        </div>
+        <input
+          type="range"
+          min={BUDGET_MIN}
+          max={BUDGET_MAX}
+          step={0.0005}
+          value={budget}
+          onChange={(e) => setBudget(parseFloat(e.target.value))}
+          onPointerDown={() => setActive(true)}
+          onPointerUp={() => setActive(false)}
+          onPointerLeave={() => setActive(false)}
+          onFocus={() => setActive(true)}
+          onBlur={() => setActive(false)}
+          aria-label="Slippage budget"
+          className="w-full accent-brand"
+        />
+      </div>
 
       <div className="mt-3 grid grid-cols-3 gap-3 border-t border-edge pt-3">
         <div>

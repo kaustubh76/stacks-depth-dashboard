@@ -50,6 +50,7 @@ export default function SlippageExplorer({
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverN, setHoverN] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
+  const [touched, setTouched] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
 
@@ -97,7 +98,12 @@ export default function SlippageExplorer({
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_minmax(200px,260px)]">
         {/* Chart */}
-        <div className="overflow-x-auto">
+        <div className="relative overflow-x-auto">
+          {!touched && (
+            <div className="pointer-events-none absolute left-1/2 top-1 z-10 -translate-x-1/2 animate-pulse rounded-sm border border-brand/40 bg-panel/90 px-2 py-0.5 font-mono text-[10px] font-bold text-brand">
+              ⟵ drag to set a trade size ⟶
+            </div>
+          )}
           <svg
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
@@ -109,6 +115,7 @@ export default function SlippageExplorer({
             onPointerDown={(e) => {
               (e.target as Element).setPointerCapture?.(e.pointerId);
               setDragging(true);
+              setTouched(true);
               const n = setFromEvent(e.clientX);
               if (n) setMoveX(n);
             }}
@@ -173,6 +180,7 @@ export default function SlippageExplorer({
             })}
             {/* pinned trade-size line + dots */}
             <line x1={xOf(moveX)} y1={T} x2={xOf(moveX)} y2={T + PH} stroke="var(--thick-line)" strokeWidth={1.6} />
+            {!touched && <circle cx={xOf(moveX)} cy={T} r={7} fill="none" stroke="#38b2c4" strokeWidth={1.5} className="animate-pulseDot" />}
             <circle cx={xOf(moveX)} cy={T} r={4} fill="var(--thick-line)" />
             {visible.map((l) => {
               const s = slippageAt(l.points, moveX);
