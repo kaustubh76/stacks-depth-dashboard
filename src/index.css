@@ -1,0 +1,153 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme tokens (dark default; flip document.documentElement.dataset.theme = "light") ── */
+:root {
+  color-scheme: dark;
+  --canvas: #0b0c10; /* flat ink canvas */
+  --thick-line: #e8e8e3; /* the 3px signature card border */
+  --brut-shadow: rgba(232, 232, 227, 0.16); /* hard offset shadow reads as a light lift on dark */
+  --grid-dot: rgba(232, 232, 227, 0.07); /* page-wide dot-grid texture (light dots on ink) */
+  --card-fill: linear-gradient(180deg, #1a1d27 0%, #15171e 100%);
+  --card-ambient: 0 10px 30px -16px rgba(0, 0, 0, 0.7);
+  --card-ambient-hover: 0 16px 38px -16px rgba(0, 0, 0, 0.82);
+  /* Animated aurora blobs (low alpha so they tint, never wash out the ink). */
+  --aurora-1: rgba(56, 178, 196, 0.16); /* Stacks Depth teal */
+  --aurora-2: rgba(56, 97, 251, 0.14); /* cool blue */
+  --aurora-3: rgba(67, 181, 129, 0.12); /* depth green */
+  /* Neutral palette as space-separated RGB triples (Tailwind rgb(var()/<alpha>)). */
+  --c-panel: 22 24 31;
+  --c-panel2: 31 34 43;
+  --c-edge: 44 47 58;
+  --c-muted: 138 143 156;
+  --c-sub: 197 200 208;
+  --c-ink: 237 237 234;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f3f3ee;
+  --thick-line: #111111;
+  --brut-shadow: #111111;
+  --grid-dot: rgba(17, 17, 17, 0.05);
+  --card-fill: linear-gradient(180deg, #ffffff 0%, #f6f6f1 100%);
+  --card-ambient: 0 8px 22px -16px rgba(17, 17, 17, 0.35);
+  --card-ambient-hover: 0 14px 30px -16px rgba(17, 17, 17, 0.45);
+  --aurora-1: rgba(56, 178, 196, 0.06);
+  --aurora-2: rgba(56, 97, 251, 0.05);
+  --aurora-3: rgba(67, 181, 129, 0.04);
+  --c-panel: 255 255 255;
+  --c-panel2: 241 241 236;
+  --c-edge: 214 214 206;
+  --c-muted: 91 99 112;
+  --c-sub: 51 58 70;
+  --c-ink: 21 22 26;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--canvas);
+  color: rgb(var(--c-ink));
+  font-family: theme("fontFamily.sans");
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Ambient AURORA: three soft colour blobs that drift slowly behind everything. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(38% 40% at 18% 22%, var(--aurora-1), transparent 70%),
+    radial-gradient(44% 46% at 82% 28%, var(--aurora-2), transparent 72%),
+    radial-gradient(42% 44% at 62% 82%, var(--aurora-3), transparent 72%);
+  animation: aurora-drift 28s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2.5%, -2%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-2%, 1.5%, 0) scale(1.05);
+  }
+}
+
+/* Page-wide dot-grid texture with a radial vignette. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 22px 22px;
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 0%, #000 30%, transparent 80%);
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 45%, #000 0%, #000 30%, transparent 80%);
+}
+
+/* Lift app content above the aurora + grid layers. */
+#root {
+  position: relative;
+  z-index: 1;
+}
+
+@layer components {
+  /* The signature panel: thick light border + hard offset shadow. */
+  .glow-card {
+    @apply border-3 rounded-sm;
+    border-color: var(--thick-line);
+    background: var(--card-fill);
+    box-shadow: 4px 4px 0 0 var(--brut-shadow), var(--card-ambient);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+  .glow-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 4px 6px 0 0 var(--brut-shadow), var(--card-ambient-hover);
+  }
+  .card-label {
+    @apply font-display text-[11px] font-bold uppercase tracking-[0.14em] text-muted;
+  }
+}
+
+/* Color-matched glow for the few biggest live numbers. */
+.metric-glow {
+  text-shadow: 0 0 18px color-mix(in srgb, currentColor 45%, transparent);
+}
+
+/* Square scrollbars to match the brutalist edges. */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #2c2f3a;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: #3a3d46;
+}
+
+/* Respect reduced-motion: neutralise the framer/CSS animations globally. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
