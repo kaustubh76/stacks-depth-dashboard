@@ -17,11 +17,16 @@ export interface LiveState {
   btc: LivePrice | null; // CoinGecko
   dexVolume24h: number | null; // Σ DexScreener Stacks pairs
   dexPairs: number | null;
+  stxHistory: number[]; // rolling STX price samples (grows each poll → live sparkline)
+  heightHistory: number[]; // rolling chain-height samples (on change)
   updatedChain: number | null; // epoch ms of last success, per source
   updatedPrice: number | null;
   updatedDex: number | null;
   anyLive: boolean;
 }
+
+const CAP = 60;
+const push = (arr: number[], v: number): number[] => (arr.length >= CAP ? [...arr.slice(1), v] : [...arr, v]);
 
 const EMPTY: LiveState = {
   chainHeight: null,
@@ -30,6 +35,8 @@ const EMPTY: LiveState = {
   btc: null,
   dexVolume24h: null,
   dexPairs: null,
+  stxHistory: [],
+  heightHistory: [],
   updatedChain: null,
   updatedPrice: null,
   updatedDex: null,
@@ -75,7 +82,17 @@ export function useLiveData(enabled: boolean): { live: LiveState; refresh: () =>
 
     const pollChain = async () => {
       const d = (await getJson(HIRO, ac.signal)) as { stacks_tip_height?: unknown; burn_block_height?: unknown } | null;
-      if (d) patch({ chainHeight: num(d.stacks_tip_height), burnHeight: num(d.burn_block_height), updatedChain: Date.now() });
+      if (!d) return;
+      const h = num(d.stacks_tip_height);
+      mounted &&
+        setLive((s) => ({
+          ...s,
+          chainHeight: h,
+          burnHeight: num(d.burn_block_height),
+          heightHistory: h !== null && h !== s.chainHeight ? push(s.heightHistory, h) : s.heightHistory,
+          updatedChain: Date.now(),
+          anyLive: true,
+        }));
     };
     const pollPrice = async () => {
       const d = (await getJson(COINGECKO, ac.signal)) as
@@ -84,11 +101,15 @@ export function useLiveData(enabled: boolean): { live: LiveState; refresh: () =>
       if (d) {
         const stxUsd = num(d.blockstack?.usd);
         const btcUsd = num(d.bitcoin?.usd);
-        patch({
-          stx: stxUsd === null ? null : { usd: stxUsd, change24h: num(d.blockstack?.usd_24h_change) },
-          btc: btcUsd === null ? null : { usd: btcUsd, change24h: num(d.bitcoin?.usd_24h_change) },
-          updatedPrice: Date.now(),
-        });
+        mounted &&
+          setLive((s) => ({
+            ...s,
+            stx: stxUsd === null ? s.stx : { usd: stxUsd, change24h: num(d.blockstack?.usd_24h_change) },
+            btc: btcUsd === null ? s.btc : { usd: btcUsd, change24h: num(d.bitcoin?.usd_24h_change) },
+            stxHistory: stxUsd === null ? s.stxHistory : push(s.stxHistory, stxUsd),
+            updatedPrice: Date.now(),
+            anyLive: true,
+          }));
       }
     };
     const pollDex = async () => {

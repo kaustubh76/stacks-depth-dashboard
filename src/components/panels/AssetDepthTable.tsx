@@ -4,6 +4,7 @@ import type { DepthLadder, Verdict } from "../../api/types";
 import { byAssetAtSlippage } from "../../lib/depth";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
+import AnimatedNumber from "../ui/AnimatedNumber";
 import { usd0, pct } from "../../lib/format";
 
 const COLS = ["0.005", "0.010", "0.020", "0.050"] as const;
@@ -76,13 +77,13 @@ export default function AssetDepthTable({
             {rows.map((r) => {
               const clears = r.live >= bar;
               return (
-                <tr key={r.asset} className="border-b border-edge/50">
+                <tr key={r.asset} className="border-b border-edge/50 transition-colors hover:bg-panel2/40">
                   <td className="py-1.5 pr-3 font-display font-bold text-ink">{r.asset}</td>
                   {COLS.map((c) => (
                     <td key={c} className="py-1.5 px-3 text-right font-mono tabular-nums text-sub">{usd0(r.buckets[c])}</td>
                   ))}
                   <td className="py-1.5 px-3 text-right font-mono tabular-nums font-bold transition-colors" style={{ color: clears ? "#43b581" : "#e0728a" }}>
-                    {usd0(r.live)}
+                    <AnimatedNumber value={r.live} format={usd0} duration={0.4} />
                   </td>
                   <td className="py-1.5 pl-3 text-right">
                     <StatusPill tone={clears ? "up" : "neutral"} srText={clears ? "clears the depth bar" : "below the depth bar"}>

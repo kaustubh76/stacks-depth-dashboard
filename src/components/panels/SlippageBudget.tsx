@@ -2,7 +2,10 @@ import type { DepthLadder, Verdict } from "../../api/types";
 import { recomputeVerdict } from "../../lib/depth";
 import { BUDGET_MIN, BUDGET_MAX } from "../../hooks/useHashState";
 import StatusPill from "../ui/StatusPill";
+import AnimatedNumber from "../ui/AnimatedNumber";
 import { usd0, pct } from "../../lib/format";
+
+const intFmt = (n: number) => String(Math.round(n));
 
 const PRESETS = [0.005, 0.01, 0.02, 0.05];
 
@@ -67,12 +70,14 @@ export default function SlippageBudget({
       <div className="mt-3 grid grid-cols-3 gap-3 border-t border-edge pt-3">
         <div>
           <div className="card-label">Movable</div>
-          <div className="font-display text-xl font-bold tabular-nums text-brand">{usd0(v.movable)}</div>
+          <div className="font-display text-xl font-bold tabular-nums text-brand">
+            <AnimatedNumber value={v.movable} format={usd0} duration={0.45} />
+          </div>
         </div>
         <div>
           <div className="card-label">Tradeable assets</div>
           <div className="font-display text-xl font-bold tabular-nums" style={{ color: v.rotationViable ? "#43b581" : "#d9a23a" }}>
-            {v.nTradeable}
+            <AnimatedNumber value={v.nTradeable} format={intFmt} duration={0.3} />
             <span className="text-sm text-muted"> / {thresholds.min_independent_assets}</span>
           </div>
         </div>

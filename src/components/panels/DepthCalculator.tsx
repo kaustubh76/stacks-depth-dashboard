@@ -3,6 +3,7 @@ import { realizedForNotional } from "../../lib/depth";
 import { X_MIN, X_MAX } from "../../hooks/useHashState";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
+import AnimatedNumber from "../ui/AnimatedNumber";
 import { usd0, pct } from "../../lib/format";
 
 const QUICK = [1000, 10000, 50000, 100000];
@@ -100,7 +101,7 @@ export default function DepthCalculator({
                 </StatusPill>
               </div>
               <div className="mt-1 font-mono text-lg font-bold tabular-nums" style={{ color: !r.feasible ? "#8a8f9c" : ok ? "#43b581" : "#e0728a" }}>
-                {r.feasible ? pct(r.slippage, r.slippage < 0.1 ? 2 : 1) : "no fill"}
+                {r.feasible ? <AnimatedNumber value={r.slippage} format={(n) => pct(n, n < 0.1 ? 2 : 1)} duration={0.35} /> : "no fill"}
               </div>
               <div className="font-mono text-[10px] text-muted">{r.bestPoolSymbol}</div>
             </li>

@@ -52,7 +52,7 @@ export default function VenuesBreakdown({ summary }: { summary: Summary }) {
           </thead>
           <tbody>
             {rows.map(({ n, v }) => (
-              <tr key={n} className="border-b border-edge/50">
+              <tr key={n} className="border-b border-edge/50 transition-colors hover:bg-panel2/40">
                 <td className="py-1.5 pr-3 font-display font-bold text-ink">{PRETTY[n]}</td>
                 <td className="py-1.5 px-3 text-right font-mono tabular-nums text-sub">{int(v.pools)}</td>
                 <td className="py-1.5 px-3 text-right font-mono tabular-nums" style={{ color: "#43b581" }}>{int(v.live)}</td>

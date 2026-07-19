@@ -1,8 +1,11 @@
+import { useEffect, useRef, useState } from "react";
+
 import type { LiveState } from "../../hooks/useLiveData";
 import { useNow } from "../../hooks/useNow";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
+import Sparkline from "../ui/Sparkline";
 import { usd0, usd, int, ago } from "../../lib/format";
 
 function Delta({ v }: { v: number | null }) {
@@ -22,15 +25,20 @@ function LiveTile({
   source,
   updated,
   now,
+  pulse = false,
 }: {
   label: string;
   children: React.ReactNode;
   source: string;
   updated: number | null;
   now: number;
+  pulse?: boolean;
 }) {
   return (
-    <div className="rounded-sm border border-edge bg-panel2/60 p-3">
+    <div
+      className="rounded-sm border bg-panel2/60 p-3 transition-all duration-300"
+      style={pulse ? { borderColor: "#43b581", boxShadow: "0 0 0 3px rgba(67,181,129,0.18)" } : { borderColor: "rgb(var(--c-edge))" }}
+    >
       <div className="card-label">{label}</div>
       <div className="mt-1.5 font-display text-xl font-bold tabular-nums text-ink">{children}</div>
       <div className="mt-1 flex items-center justify-between gap-2 font-mono text-[10px] text-muted">
@@ -58,6 +66,20 @@ export default function LiveCrossCheck({
   onToggle: () => void;
 }) {
   const now = useNow(1000);
+
+  // Flash the block tile the moment a new Stacks block lands.
+  const prevHeight = useRef<number | null>(null);
+  const [blockPulse, setBlockPulse] = useState(false);
+  useEffect(() => {
+    if (live.chainHeight !== null && prevHeight.current !== null && live.chainHeight !== prevHeight.current) {
+      setBlockPulse(true);
+      const t = window.setTimeout(() => setBlockPulse(false), 900);
+      prevHeight.current = live.chainHeight;
+      return () => window.clearTimeout(t);
+    }
+    prevHeight.current = live.chainHeight;
+  }, [live.chainHeight]);
+
   const volDelta =
     live.dexVolume24h !== null && snapshotCleanVol > 0
       ? ((live.dexVolume24h - snapshotCleanVol) / snapshotCleanVol) * 100
@@ -93,7 +115,7 @@ export default function LiveCrossCheck({
         below. These update; the snapshot does not.
       </p>
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-        <LiveTile label="Stacks block" source="Hiro" updated={live.updatedChain} now={now}>
+        <LiveTile label="Stacks block" source="Hiro" updated={live.updatedChain} now={now} pulse={blockPulse}>
           {live.chainHeight !== null ? (
             <AnimatedNumber value={live.chainHeight} format={(n) => `#${int(n)}`} />
           ) : (
@@ -131,6 +153,15 @@ export default function LiveCrossCheck({
           )}
         </LiveTile>
       </div>
+      {live.stxHistory.length >= 2 && (
+        <div className="mt-3 rounded-sm border border-edge bg-panel2/40 p-2.5">
+          <div className="mb-1 flex items-center justify-between">
+            <span className="card-label">STX · this session</span>
+            <span className="font-mono text-[10px] text-muted">{live.stxHistory.length} samples · builds every 30s</span>
+          </div>
+          <Sparkline data={live.stxHistory} color="auto" height={34} />
+        </div>
+      )}
       <p className="mt-2.5 border-t border-edge pt-2 font-mono text-[10px] text-muted">
         snapshot clean volume {usd0(snapshotCleanVol)} · live DEX volume is an independent cross-check, not a
         replacement — the measurement stands on the committed on-chain harvest.

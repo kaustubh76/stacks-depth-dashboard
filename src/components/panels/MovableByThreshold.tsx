@@ -2,6 +2,7 @@ import type { DepthIndex, DepthLadder } from "../../api/types";
 import { movableAtSlippage } from "../../lib/depth";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
+import AnimatedNumber from "../ui/AnimatedNumber";
 import { usd0, pct } from "../../lib/format";
 
 const ORDER = ["0.005", "0.010", "0.020", "0.050"];
@@ -45,7 +46,9 @@ export default function MovableByThreshold({
                 style={{ width: `${(r.value / max) * 100}%`, background: r.live ? "#38b2c4" : "#38b2c4aa" }}
               />
             </div>
-            <span className={`w-24 shrink-0 font-mono text-[13px] tabular-nums ${r.live ? "text-brand" : "text-ink"}`}>{usd0(r.value)}</span>
+            <span className={`w-24 shrink-0 font-mono text-[13px] tabular-nums ${r.live ? "text-brand" : "text-ink"}`}>
+              {r.live ? <AnimatedNumber value={r.value} format={usd0} duration={0.4} /> : usd0(r.value)}
+            </span>
           </div>
         ))}
       </div>

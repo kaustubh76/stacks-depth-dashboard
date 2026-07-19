@@ -1,3 +1,4 @@
+import { motion, useReducedMotion } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 
 import type { DepthLadder } from "../../api/types";
@@ -45,6 +46,7 @@ export default function SlippageExplorer({
   setMoveX: (n: number) => void;
   budget: number;
 }) {
+  const reduce = useReducedMotion();
   const svgRef = useRef<SVGSVGElement>(null);
   const [hoverN, setHoverN] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -149,13 +151,25 @@ export default function SlippageExplorer({
             {hoverN && !dragging && (
               <line x1={xOf(hoverN)} y1={T} x2={xOf(hoverN)} y2={T + PH} stroke="rgb(var(--c-muted))" strokeWidth={1} opacity={0.4} />
             )}
-            {/* curves */}
-            {visible.map((l) => {
+            {/* curves — draw themselves in on load */}
+            {visible.map((l, i) => {
               const color = colorFor.get(poolKey(l))!;
               const pts = l.points
                 .map((p) => `${xOf(p.notional).toFixed(1)},${yOf(p.slippage).toFixed(1)}`)
                 .join(" ");
-              return <polyline key={poolKey(l)} points={pts} fill="none" stroke={color} strokeWidth={1.9} strokeLinejoin="round" opacity={0.92} />;
+              return (
+                <motion.polyline
+                  key={poolKey(l)}
+                  points={pts}
+                  fill="none"
+                  stroke={color}
+                  strokeWidth={1.9}
+                  strokeLinejoin="round"
+                  initial={reduce ? false : { pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 0.92 }}
+                  transition={{ duration: 0.9, delay: Math.min(i, 8) * 0.05, ease: "easeOut" }}
+                />
+              );
             })}
             {/* pinned trade-size line + dots */}
             <line x1={xOf(moveX)} y1={T} x2={xOf(moveX)} y2={T + PH} stroke="var(--thick-line)" strokeWidth={1.6} />

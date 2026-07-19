@@ -1,6 +1,7 @@
 import type { DepthLadder, Verdict } from "../../api/types";
 import { recomputeVerdict } from "../../lib/depth";
 import StatusPill from "../ui/StatusPill";
+import AnimatedNumber from "../ui/AnimatedNumber";
 import { usd0, pct } from "../../lib/format";
 
 /** The headline finding (snapshot @ ≤2%), with a coloured rail + a live recompute row that
@@ -15,13 +16,14 @@ export default function VerdictBanner({
   budget: number;
 }) {
   const viable = verdict.rotation_viable;
-  const rail = viable ? "#43b581" : "#e0728a";
   const offSnapshot = Math.abs(budget - 0.02) > 1e-6;
   const rv = offSnapshot ? recomputeVerdict(ladders, budget, verdict.thresholds) : null;
+  const effectiveViable = rv ? rv.rotationViable : viable; // rail tracks the current budget
+  const rail = effectiveViable ? "#43b581" : "#e0728a";
 
   return (
-    <section className="glow-card relative mb-5 p-5 pl-6" style={{ boxShadow: `6px 6px 0 0 ${rail}, var(--card-ambient)` }}>
-      <span className="absolute inset-y-0 left-0 w-[6px]" style={{ background: rail }} />
+    <section className="glow-card relative mb-5 p-5 pl-6 transition-shadow duration-500" style={{ boxShadow: `6px 6px 0 0 ${rail}, var(--card-ambient)` }}>
+      <span className="absolute inset-y-0 left-0 w-[6px] transition-colors duration-500" style={{ background: rail }} />
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <StatusPill tone={viable ? "up" : "down"} dot srText={viable ? "rotation viable" : "rotation not viable"}>
           {viable ? "Tradeable" : "Not yet tradeable"}
@@ -42,7 +44,8 @@ export default function VerdictBanner({
             at ≤{pct(budget, budget < 0.01 ? 2 : 1)}
           </StatusPill>
           <span className="font-mono text-[12px] text-sub">
-            {usd0(rv.movable)} movable · {rv.nTradeable}/{verdict.thresholds.min_independent_assets} tradeable ·{" "}
+            <AnimatedNumber value={rv.movable} format={usd0} duration={0.4} /> movable ·{" "}
+            {rv.nTradeable}/{verdict.thresholds.min_independent_assets} tradeable ·{" "}
             <span style={{ color: rv.rotationViable ? "#43b581" : "#e0728a" }}>
               {rv.rotationViable ? "rotation viable" : "still not viable"}
             </span>
