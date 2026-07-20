@@ -10,6 +10,8 @@ export const OPEN_CHEATSHEET_EVENT = "sd:cheatsheet";
 export const START_TOUR_EVENT = "sd:tour";
 /** Fire to focus the Trade planner's size input (dispatched by the ⌘K "Plan a trade" action). */
 export const FOCUS_PLANNER_EVENT = "sd:plan-focus";
+/** Fire (detail: {bandId}) to expand a collapsed SectionBand before scrolling to it. */
+export const OPEN_SECTION_EVENT = "sd:open-section";
 
 /** `g`-then-key quick-nav. Curated, collision-free letters → panel labels. */
 export interface NavKey {

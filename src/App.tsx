@@ -14,7 +14,8 @@ import PoolCompare from "./components/panels/PoolCompare";
 import { ChipButton } from "./components/ui/ChipButton";
 import { useToast } from "./components/ui/Toast";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
-import StickyHeader from "./components/StickyHeader";
+import StickyHeader, { type NavSection } from "./components/StickyHeader";
+import SectionBand from "./components/SectionBand";
 import CommandPalette from "./components/cockpit/CommandPalette";
 import KeyboardLayer from "./components/cockpit/KeyboardLayer";
 import Cheatsheet from "./components/cockpit/Cheatsheet";
@@ -40,11 +41,19 @@ import Footer from "./components/panels/Footer";
  * discover from the DOM, with scroll-mt so the flash target clears the sticky header. */
 function Panel({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div id={sectionId(label)} data-section-label={label} className="scroll-mt-20">
+    <div id={sectionId(label)} data-section-label={label} className="scroll-mt-28">
       <ErrorBoundary label={label}>{children}</ErrorBoundary>
     </div>
   );
 }
+
+/** The 4-section information architecture (band titles must match the SectionBand titles below). */
+const SECTIONS: NavSection[] = [
+  { label: "Overview", short: "Overview" },
+  { label: "Plan a trade", short: "Plan" },
+  { label: "Explore the pools", short: "Pools" },
+  { label: "The evidence", short: "Evidence" },
+];
 
 export default function App() {
   const data = bakedData();
@@ -147,6 +156,7 @@ export default function App() {
         live={live.anyLive}
         liveEnabled={liveEnabled}
         onToggleLive={() => setLiveEnabled((v) => !v)}
+        sections={SECTIONS}
       />
 
       {/* Cockpit overlays — self-wire via the window-event bus */}
@@ -166,56 +176,80 @@ export default function App() {
       <Cheatsheet />
       <Tour />
 
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
         <Masthead asOf={summary.as_of_date} live={false} />
 
-        <div className="mb-4">
+        {/* Hero strip — the answer at a glance + the primary path */}
+        <div className="mb-6 flex flex-col gap-3 rounded-sm border-3 border-[color:var(--thick-line)] bg-panel2/40 p-4 shadow-brut-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="font-mono text-[13px] leading-relaxed text-sub">
+            <b className="text-brand">{usd0(study.verdict.movable_at_2pct_usd)}</b> moves at ≤2% ·{" "}
+            <b className="text-ink">
+              {study.verdict.n_tradeable_assets}/{study.verdict.thresholds.min_independent_assets}
+            </b>{" "}
+            assets tradeable ·{" "}
+            <span style={{ color: study.verdict.rotation_viable ? "#43b581" : "#e0728a" }}>
+              {study.verdict.rotation_viable ? "systematic trading viable" : "not yet viable"}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={() => flashSection(sectionId("Plan a trade"))}
+              className="rounded-sm border-3 border-brand/50 bg-brand/10 px-3 py-1.5 font-display text-[12px] font-bold text-brand shadow-brut-sm transition hover:bg-brand/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              Plan a trade →
+            </button>
+            <button
+              type="button"
+              onClick={() => flashSection(sectionId("The evidence"))}
+              className="rounded-sm border border-edge px-3 py-1.5 font-mono text-[11px] text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              See the evidence
+            </button>
+          </div>
+        </div>
+
+        <SectionBand title="Overview" summary="the finding, and live conditions right now">
+          <Panel label="Verdict">
+            <VerdictBanner verdict={study.verdict} ladders={ladders} budget={budget} />
+          </Panel>
+          <Panel label="Headline">
+            <HeadlineTiles summary={summary} verdict={study.verdict} />
+          </Panel>
           <Panel label="Live cross-check">
             <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} />
           </Panel>
-        </div>
-
-        <div className="mb-5">
           <Panel label="Live depth drift">
             <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} />
           </Panel>
-        </div>
+        </SectionBand>
 
-        <Panel label="Verdict">
-          <VerdictBanner verdict={study.verdict} ladders={ladders} budget={budget} />
-        </Panel>
-
-        <Panel label="Headline">
-          <HeadlineTiles summary={summary} verdict={study.verdict} />
-        </Panel>
-
-        {/* Interactive core */}
-        <div className="sticky top-12 z-30">
+        {/* Master control — always visible, drives the Plan + Pools sections */}
+        <div className="sticky top-12 z-30 mb-6">
           <Panel label="Slippage budget">
             <SlippageBudget ladders={ladders} thresholds={study.verdict.thresholds} budget={budget} setBudget={setBudget} />
           </Panel>
         </div>
 
-        <Panel label="Scenarios">
-          <ScenarioPresets
-            budget={budget}
-            moveX={moveX}
-            setBudget={setBudget}
-            setMoveX={setMoveX}
-            actions={
-              <span className="flex items-center gap-1.5">
-                <ChipButton onClick={copySummary} title="copy a one-paragraph summary of the current scenario" ariaLabel="Copy scenario summary">
-                  copy summary
-                </ChipButton>
-                <ChipButton onClick={downloadScenarioJson} title="download the current scenario as JSON" ariaLabel="Download scenario JSON">
-                  ⬇ .json
-                </ChipButton>
-              </span>
-            }
-          />
-        </Panel>
-
-        <div className="mb-4">
+        <SectionBand title="Plan a trade" summary="size a trade, explore slippage, run what-ifs">
+          <Panel label="Scenarios">
+            <ScenarioPresets
+              budget={budget}
+              moveX={moveX}
+              setBudget={setBudget}
+              setMoveX={setMoveX}
+              actions={
+                <span className="flex items-center gap-1.5">
+                  <ChipButton onClick={copySummary} title="copy a one-paragraph summary of the current scenario" ariaLabel="Copy scenario summary">
+                    copy summary
+                  </ChipButton>
+                  <ChipButton onClick={downloadScenarioJson} title="download the current scenario as JSON" ariaLabel="Download scenario JSON">
+                    ⬇ .json
+                  </ChipButton>
+                </span>
+              }
+            />
+          </Panel>
           <Panel label="Trade planner">
             <TradePlanner
               ladders={ladders}
@@ -227,9 +261,6 @@ export default function App() {
               planSummary={planSummary}
             />
           </Panel>
-        </div>
-
-        <div className="mb-4">
           <Panel label="Slippage explorer">
             <SlippageExplorer
               ladders={ladders}
@@ -240,15 +271,12 @@ export default function App() {
               onClearFocus={() => selection.setFocus(null)}
             />
           </Panel>
-        </div>
-
-        <div className="mb-4">
           <Panel label="Depth calculator">
             <DepthCalculator ladders={ladders} moveX={moveX} setMoveX={setMoveX} budget={budget} />
           </Panel>
-        </div>
+        </SectionBand>
 
-        <div className="mb-4">
+        <SectionBand title="Explore the pools" summary="every measured pool, compared, at your budget">
           <Panel label="Pool browser">
             <PoolBrowser
               ladders={ladders}
@@ -258,41 +286,35 @@ export default function App() {
               onDownloadJson={downloadScenarioJson}
             />
           </Panel>
-        </div>
-
-        <div className="mb-4">
           <Panel label="Pool compare">
             <PoolCompare ladders={ladders} budget={budget} moveX={moveX} selection={selection} />
           </Panel>
-        </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Panel label="Movable by budget">
+              <MovableByThreshold depth={study.depth_index} ladders={ladders} budget={budget} setBudget={setBudget} />
+            </Panel>
+            <Panel label="Asset depth">
+              <AssetDepthTable byAsset={study.depth_index.by_asset} verdict={study.verdict} ladders={ladders} budget={budget} />
+            </Panel>
+          </div>
+        </SectionBand>
 
-        <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Panel label="Movable by budget">
-            <MovableByThreshold depth={study.depth_index} ladders={ladders} budget={budget} setBudget={setBudget} />
-          </Panel>
-          <Panel label="Asset depth">
-            <AssetDepthTable byAsset={study.depth_index.by_asset} verdict={study.verdict} ladders={ladders} budget={budget} />
-          </Panel>
-        </div>
-
-        <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-          <Panel label="Data quality">
-            <DataQualityPanel summary={summary} />
-          </Panel>
-          <Panel label="Venues">
-            <VenuesBreakdown summary={summary} />
-          </Panel>
-        </div>
-
-        <div className="mb-4">
+        <SectionBand title="The evidence" summary="data quality, venues, backtest, provenance" defaultOpen={false}>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Panel label="Data quality">
+              <DataQualityPanel summary={summary} />
+            </Panel>
+            <Panel label="Venues">
+              <VenuesBreakdown summary={summary} />
+            </Panel>
+          </div>
           <Panel label="Rotation backtest">
             <RotationBacktest audit={study.audit} budget={budget} />
           </Panel>
-        </div>
-
-        <Panel label="Provenance">
-          <Provenance facts={data.facts} />
-        </Panel>
+          <Panel label="Provenance">
+            <Provenance facts={data.facts} />
+          </Panel>
+        </SectionBand>
 
         <Footer summary={summary} />
       </div>
