@@ -1,0 +1,51 @@
+name: re-harvest stacks depth
+
+# Keeps the dashboard's on-chain measurement fresh: re-runs the harvest from chain, regenerates the
+# baked data (src/data/*.json), and commits any change — Render's autoDeploy then ships fresh
+# numbers. Runs on a schedule + on demand. Keyless works (slow, ~20-30 min); add a HIRO_API_KEY repo
+# secret (Settings → Secrets and variables → Actions) for the ~3-min fast path.
+
+on:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours (UTC)
+  workflow_dispatch: {} # manual "Run workflow" button
+
+permissions:
+  contents: write
+
+concurrency:
+  group: reharvest
+  cancel-in-progress: false
+
+jobs:
+  reharvest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install harvest deps
+        run: pip install -r harvest/requirements.txt
+
+      - name: Re-harvest + regenerate baked data
+        env:
+          HIRO_API_KEY: ${{ secrets.HIRO_API_KEY }}
+        run: PYTHONPATH=harvest python harvest/regenerate.py
+
+      - name: Commit refreshed data (if changed)
+        run: |
+          git config user.name "stacks-depth-bot"
+          git config user.email "stacks-depth-bot@users.noreply.github.com"
+          if git diff --quiet -- src/data; then
+            echo "no change in src/data — nothing to commit"
+          else
+            AS_OF=$(python -c "import json;print(json.load(open('src/data/summary.json'))['as_of_date'])")
+            git add src/data
+            git commit -m "chore: re-harvest stacks depth ($AS_OF) [auto]"
+            git push
+            echo "pushed refreshed data — Render will auto-deploy"
+          fi

@@ -2,3 +2,9 @@ node_modules/
 dist/
 .DS_Store
 *.local
+
+# harvest pipeline scratch (only the regenerated src/data/*.json is committed)
+harvest/_scratch/
+harvest/data/
+harvest/**/__pycache__/
+harvest/.clarinet/
