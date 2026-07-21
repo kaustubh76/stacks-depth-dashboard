@@ -24,12 +24,14 @@ export default function PoolBrowser({
   ladders,
   budget,
   selection,
+  onOpenPool,
   onDownloadCsv,
   onDownloadJson,
 }: {
   ladders: DepthLadder[];
   budget: number;
   selection: PoolSelection;
+  onOpenPool: (key: string) => void;
   onDownloadCsv: () => void;
   onDownloadJson: () => void;
 }) {
@@ -213,7 +215,17 @@ export default function PoolBrowser({
                 const isFocused = selection.focusKey === key;
                 return (
                   <tr key={key} className={`border-b border-edge/50 transition-colors hover:bg-panel2/40 ${isFocused ? "bg-brand/5" : ""}`}>
-                    <td className="py-1.5 pr-3 font-display font-bold text-ink">{l.symbol}</td>
+                    <td className="py-1.5 pr-3">
+                      <button
+                        type="button"
+                        onClick={() => onOpenPool(key)}
+                        className="font-display font-bold text-ink transition hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                        title={`Open ${l.symbol} pool page`}
+                        aria-label={`Open ${l.symbol} pool detail page`}
+                      >
+                        {l.symbol} <span className="font-mono text-[10px] text-muted">↗</span>
+                      </button>
+                    </td>
                     <td className="py-1.5 pr-3 font-mono text-[11px] text-sub">{l.venue}</td>
                     <td className="py-1.5 pr-3 font-mono text-[11px] text-muted">{l.major_symbol}</td>
                     <td className="py-1.5 px-3 text-right font-mono tabular-nums text-sub">{usd0(l.tvl_usd)}</td>

@@ -4,6 +4,7 @@
 // has drifted since 2026-07-18. Live never overwrites a snapshot number.
 
 import type { DepthLadder } from "../api/types";
+import { poolKey } from "./depth";
 
 export interface LivePair {
   venue: string; // DexScreener dexId (bitflow | velar | alex) — matches the snapshot venue
@@ -16,6 +17,7 @@ export interface LivePair {
 }
 
 export interface SnapshotPool {
+  key: string; // poolKey(l) — venue:pool_id:major_symbol, for deep-linking the pool page
   venue: string;
   pool_id: string;
   symbol: string;
@@ -56,6 +58,7 @@ export function snapshotPools(ladders: DepthLadder[]): SnapshotPool[] {
   for (const l of ladders) {
     if (!byId.has(l.pool_id)) {
       byId.set(l.pool_id, {
+        key: poolKey(l),
         venue: l.venue,
         pool_id: l.pool_id,
         symbol: l.symbol,

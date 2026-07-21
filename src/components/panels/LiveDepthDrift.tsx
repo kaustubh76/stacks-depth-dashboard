@@ -30,10 +30,12 @@ export default function LiveDepthDrift({
   live,
   ladders,
   snapshotMovable,
+  onOpenPool,
 }: {
   live: LiveState;
   ladders: DepthLadder[];
   snapshotMovable: number;
+  onOpenPool: (key: string) => void;
 }) {
   const now = useNow(1000);
   const pools = useMemo(() => snapshotPools(ladders), [ladders]);
@@ -112,11 +114,18 @@ export default function LiveDepthDrift({
                 {drift.rows.map((r) => (
                   <tr key={r.pool.pool_id} className="border-b border-edge/50 transition-colors hover:bg-panel2/40">
                     <td className="py-1.5 pr-3">
-                      <span className="font-display font-bold text-ink">{r.pool.symbol}</span>{" "}
+                      <button
+                        type="button"
+                        onClick={() => onOpenPool(r.pool.key)}
+                        className="font-display font-bold text-ink transition hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                        title={`Open ${r.pool.symbol} pool page`}
+                      >
+                        {r.pool.symbol} <span className="font-mono text-[9px] text-muted">↗</span>
+                      </button>{" "}
                       <span className="font-mono text-[10px] text-muted">{r.pool.venue}</span>
                       {r.url && (
                         <a href={r.url} target="_blank" rel="noreferrer" className="ml-1 text-muted transition hover:text-brand" title="open pool on DexScreener">
-                          ↗
+                          dex↗
                         </a>
                       )}
                     </td>

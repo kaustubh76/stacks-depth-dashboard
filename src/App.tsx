@@ -17,6 +17,7 @@ import ErrorBoundary from "./components/ui/ErrorBoundary";
 import StickyHeader, { type NavSection } from "./components/StickyHeader";
 import SectionBand from "./components/SectionBand";
 import TradePlanPage from "./components/TradePlanPage";
+import PoolDetailPage from "./components/PoolDetailPage";
 import CommandPalette from "./components/cockpit/CommandPalette";
 import KeyboardLayer from "./components/cockpit/KeyboardLayer";
 import Cheatsheet from "./components/cockpit/Cheatsheet";
@@ -59,7 +60,7 @@ const SECTIONS: NavSection[] = [
 export default function App() {
   const data = bakedData();
   const { summary, study, ladders } = data;
-  const { budget, setBudget, moveX, setMoveX, asset, setAsset, view, openPlan, closePlan, shareLink } = useScenario();
+  const { budget, setBudget, moveX, setMoveX, asset, setAsset, view, pool, openPlan, openPool, closePlan, goDashboard, shareLink } = useScenario();
 
   const [liveEnabled, setLiveEnabled] = useState(true);
   const { live, refresh } = useLiveData(liveEnabled);
@@ -170,6 +171,23 @@ export default function App() {
     );
   }
 
+  if (view === "pool" && pool) {
+    return (
+      <PoolDetailPage
+        ladders={ladders}
+        live={live}
+        budget={budget}
+        moveX={moveX}
+        setAsset={setAsset}
+        poolKeyStr={pool}
+        selection={selection}
+        onOpenPlan={openPlan}
+        onClose={goDashboard}
+        shareLink={shareLink}
+      />
+    );
+  }
+
   return (
     <>
       <StickyHeader
@@ -241,7 +259,7 @@ export default function App() {
             <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} />
           </Panel>
           <Panel label="Live depth drift">
-            <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} />
+            <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} onOpenPool={openPool} />
           </Panel>
         </SectionBand>
 
@@ -303,6 +321,7 @@ export default function App() {
               ladders={ladders}
               budget={budget}
               selection={selection}
+              onOpenPool={openPool}
               onDownloadCsv={downloadCsv}
               onDownloadJson={downloadScenarioJson}
             />
