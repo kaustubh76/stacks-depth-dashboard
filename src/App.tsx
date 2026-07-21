@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { bakedData } from "./api/data";
 import { useScenario } from "./hooks/useHashState";
@@ -17,7 +17,6 @@ import ErrorBoundary from "./components/ui/ErrorBoundary";
 import StickyHeader, { type NavSection } from "./components/StickyHeader";
 import SectionBand from "./components/SectionBand";
 import LiveTicker from "./components/LiveTicker";
-import { matchDrift, snapshotPools } from "./lib/live";
 import TradePlanPage from "./components/TradePlanPage";
 import PoolDetailPage from "./components/PoolDetailPage";
 import CommandPalette from "./components/cockpit/CommandPalette";
@@ -53,9 +52,11 @@ function Panel({ label, children }: { label: string; children: React.ReactNode }
 
 /** The 4-section information architecture (band titles must match the SectionBand titles below). */
 const SECTIONS: NavSection[] = [
-  { label: "Overview", short: "Overview" },
-  { label: "Plan a trade", short: "Plan" },
-  { label: "Explore the pools", short: "Pools" },
+  { label: "Answer", short: "Answer" },
+  { label: "Explore", short: "Explore" },
+  { label: "More trade tools", short: "Tools" },
+  { label: "Live detail", short: "Live" },
+  { label: "All pools", short: "Pools" },
   { label: "The evidence", short: "Evidence" },
 ];
 
@@ -68,13 +69,6 @@ export default function App() {
   const { live, refresh } = useLiveData(liveEnabled);
   const selection = usePoolSelection();
   const { toast } = useToast();
-
-  // Live-adjusted movable @≤2% — the snapshot figure scaled by live/snapshot liquidity where
-  // DexScreener tracks the pool. Labelled est.; never overwrites the measured number.
-  const liveMovableEst = useMemo(
-    () => matchDrift(snapshotPools(ladders), live.dexPairs, study.verdict.movable_at_2pct_usd).liveMovableEst,
-    [ladders, live.dexPairs, study.verdict.movable_at_2pct_usd],
-  );
 
   const copyLink = useCallback(() => {
     try {
@@ -230,63 +224,67 @@ export default function App() {
         {/* Live ribbon — the top of the page reads current, not frozen */}
         <LiveTicker live={live} />
 
-        {/* Hero strip — the answer at a glance + the primary path */}
-        <div className="mb-6 flex flex-col gap-3 rounded-sm border-3 border-[color:var(--thick-line)] bg-panel2/40 p-4 shadow-brut-sm sm:flex-row sm:items-center sm:justify-between">
-          <div className="font-mono text-[13px] leading-relaxed text-sub">
-            <b className="text-brand">{usd0(study.verdict.movable_at_2pct_usd)}</b> moves at ≤2%
-            {liveMovableEst !== null && (
-              <span className="text-muted"> (≈{usd0(liveMovableEst)} live<span className="text-[9px] uppercase"> est.</span>)</span>
-            )}{" "}
-            ·{" "}
-            <b className="text-ink">
-              {study.verdict.n_tradeable_assets}/{study.verdict.thresholds.min_independent_assets}
-            </b>{" "}
-            assets tradeable ·{" "}
-            <span style={{ color: study.verdict.rotation_viable ? "#43b581" : "#e0728a" }}>
-              {study.verdict.rotation_viable ? "systematic trading viable" : "not yet viable"}
-            </span>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <button
-              type="button"
-              onClick={() => flashSection(sectionId("Plan a trade"))}
-              className="rounded-sm border-3 border-brand/50 bg-brand/10 px-3 py-1.5 font-display text-[12px] font-bold text-brand shadow-brut-sm transition hover:bg-brand/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
-            >
-              Plan a trade →
-            </button>
-            <button
-              type="button"
-              onClick={() => flashSection(sectionId("The evidence"))}
-              className="rounded-sm border border-edge px-3 py-1.5 font-mono text-[11px] text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
-            >
-              See the evidence
-            </button>
-          </div>
-        </div>
-
-        <SectionBand title="Overview" summary="the finding, and live conditions right now">
+        {/* ── THE ANSWER ── the headline finding, stated once */}
+        <div id={sectionId("Answer")} data-section-label="Answer" className="scroll-mt-28">
           <Panel label="Verdict">
             <VerdictBanner verdict={study.verdict} ladders={ladders} budget={budget} />
           </Panel>
           <Panel label="Headline">
             <HeadlineTiles summary={summary} verdict={study.verdict} />
           </Panel>
-          <Panel label="Live cross-check">
-            <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} />
-          </Panel>
-          <Panel label="Live depth drift">
-            <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} onOpenPool={openPool} />
-          </Panel>
-        </SectionBand>
+          {/* the three ways forward */}
+          <div className="mb-8 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={openPlan}
+              className="rounded-sm border-3 border-brand/50 bg-brand/10 px-3.5 py-2 font-display text-[13px] font-bold text-brand shadow-brut-sm transition hover:-translate-y-0.5 hover:bg-brand/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              Plan a trade →
+            </button>
+            <button
+              type="button"
+              onClick={() => flashSection(sectionId("All pools"))}
+              className="rounded-sm border border-edge px-3.5 py-2 font-mono text-[12px] text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              Browse all {ladders.length} pools →
+            </button>
+            <button
+              type="button"
+              onClick={() => flashSection(sectionId("The evidence"))}
+              className="rounded-sm border border-edge px-3.5 py-2 font-mono text-[12px] text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              See the evidence →
+            </button>
+          </div>
+        </div>
 
-        {/* Master control — always visible, drives the Plan + Pools sections */}
-        <div className="sticky top-12 z-30 mb-6">
+        {/* ── EXPLORE ── the one primary tool, always visible */}
+        <div className="mb-3">
+          <h2 className="font-display text-sm font-bold uppercase tracking-[0.16em] text-ink">Explore the depth</h2>
+          <p className="mt-1 font-mono text-[12px] text-muted">
+            set a slippage budget, drag a trade size, and read what each pool would charge.
+          </p>
+        </div>
+        <div className="sticky top-12 z-30 mb-4">
           <Panel label="Slippage budget">
             <SlippageBudget ladders={ladders} thresholds={study.verdict.thresholds} budget={budget} setBudget={setBudget} />
           </Panel>
         </div>
+        <div id={sectionId("Explore")} data-section-label="Explore" className="mb-8 scroll-mt-28">
+          <Panel label="Slippage explorer">
+            <SlippageExplorer
+              ladders={ladders}
+              moveX={moveX}
+              setMoveX={setMoveX}
+              budget={budget}
+              focus={selection.focusKey}
+              onClearFocus={() => selection.setFocus(null)}
+            />
+          </Panel>
+        </div>
 
-        <SectionBand title="Plan a trade" summary="size a trade, explore slippage, run what-ifs">
+        {/* ── DEEPER ── progressive disclosure; everything else, one click away ── */}
+        <SectionBand title="More trade tools" summary="scenarios · full planner · per-asset calculator" defaultOpen={false}>
           <Panel label="Scenarios">
             <ScenarioPresets
               budget={budget}
@@ -316,22 +314,21 @@ export default function App() {
               onOpenPlan={openPlan}
             />
           </Panel>
-          <Panel label="Slippage explorer">
-            <SlippageExplorer
-              ladders={ladders}
-              moveX={moveX}
-              setMoveX={setMoveX}
-              budget={budget}
-              focus={selection.focusKey}
-              onClearFocus={() => selection.setFocus(null)}
-            />
-          </Panel>
           <Panel label="Depth calculator">
             <DepthCalculator ladders={ladders} moveX={moveX} setMoveX={setMoveX} budget={budget} />
           </Panel>
         </SectionBand>
 
-        <SectionBand title="Explore the pools" summary="every measured pool, compared, at your budget">
+        <SectionBand title="Live detail" summary="live price/DEX cross-check + per-pool liquidity drift" defaultOpen={false}>
+          <Panel label="Live cross-check">
+            <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} />
+          </Panel>
+          <Panel label="Live depth drift">
+            <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} onOpenPool={openPool} />
+          </Panel>
+        </SectionBand>
+
+        <SectionBand title="All pools" summary="every measured pool, compared, at your budget" defaultOpen={false}>
           <Panel label="Pool browser">
             <PoolBrowser
               ladders={ladders}
@@ -355,7 +352,7 @@ export default function App() {
           </div>
         </SectionBand>
 
-        <SectionBand title="The evidence" summary="data quality, venues, backtest, provenance" defaultOpen={false}>
+        <SectionBand title="The evidence" summary="data quality · venues · backtest · provenance" defaultOpen={false}>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Panel label="Data quality">
               <DataQualityPanel summary={summary} />

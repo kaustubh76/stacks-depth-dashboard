@@ -79,8 +79,7 @@ export default function VerdictBanner({
           </StatusPill>
         )}
         <span className="font-mono text-[12px] text-muted">
-          <AnimatedNumber value={movable} format={usd0} duration={0.4} /> movable ·{" "}
-          {nTradeable}/{minAssets} assets clear the bar
+          {nTradeable}/{minAssets} assets clear the {usd0(target)} bar
         </span>
       </div>
       <p className="text-[15px] leading-relaxed text-sub">{verdict.finding}</p>

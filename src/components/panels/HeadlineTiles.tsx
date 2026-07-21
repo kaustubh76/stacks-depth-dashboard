@@ -14,20 +14,19 @@ interface Tile {
   target: string;
 }
 
-/** The six headline numbers (the published snapshot), each counting up on first view.
- * Every tile is a button that jumps to the panel with the full story. */
-export default function HeadlineTiles({ summary, verdict }: { summary: Summary; verdict: Verdict }) {
+/** Context stats for the ecosystem (NOT the answer — that's the verdict). Each tile jumps to the
+ * section with the full story. The movable + tradeable figures live in the verdict/budget control,
+ * so they're intentionally not repeated here. */
+export default function HeadlineTiles({ summary }: { summary: Summary; verdict?: Verdict }) {
   const tiles: Tile[] = [
-    { label: "Pools tracked", value: summary.pools_total, format: int, plain: "ALEX · Velar · Bitflow", target: "Venues" },
-    { label: "Trading in 24h", value: summary.pools_live, format: int, plain: `${Math.round((summary.pools_live / summary.pools_total) * 100)}% of pools are live`, color: "#43b581", target: "Venues" },
-    { label: "Total TVL", value: summary.tvl_usd_total, format: usd0, plain: "on-chain reserves", target: "Pool browser" },
-    { label: "Clean 24h volume", value: summary.volume_24h_usd_clean, format: usd0, plain: "ex-flagged · see data quality", target: "Data quality" },
-    { label: "Movable @ ≤2%", value: verdict.movable_at_2pct_usd, format: usd0, plain: "before 2% slippage", color: "#38b2c4", glow: true, target: "Movable by budget" },
-    { label: "Tradeable assets", value: verdict.n_tradeable_assets, format: int, plain: `clearing a ${usd0(verdict.thresholds.min_asset_depth_2pct_usd)} depth bar`, color: verdict.n_tradeable_assets >= verdict.thresholds.min_independent_assets ? "#43b581" : "#d9a23a", target: "Asset depth" },
+    { label: "Pools tracked", value: summary.pools_total, format: int, plain: "ALEX · Velar · Bitflow", target: "All pools" },
+    { label: "Trading in 24h", value: summary.pools_live, format: int, plain: `${Math.round((summary.pools_live / summary.pools_total) * 100)}% of pools are live`, color: "#43b581", target: "All pools" },
+    { label: "Total TVL", value: summary.tvl_usd_total, format: usd0, plain: "on-chain reserves", target: "All pools" },
+    { label: "Clean 24h volume", value: summary.volume_24h_usd_clean, format: usd0, plain: "ex-flagged · see data quality", target: "The evidence" },
   ];
 
   return (
-    <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+    <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
       {tiles.map((t) => (
         <button
           key={t.label}
