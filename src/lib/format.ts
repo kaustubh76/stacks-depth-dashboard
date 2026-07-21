@@ -40,6 +40,20 @@ export function ago(ts: number | null | undefined, now: number): string {
   return `${Math.round(s / 3600)}h ago`;
 }
 
+/** Whole days since an ISO date (YYYY-MM-DD), clamped ≥ 0. */
+export function daysSince(dateStr: string | null | undefined, now = Date.now()): number {
+  if (!dateStr) return 0;
+  const t = Date.parse(`${dateStr}T00:00:00Z`);
+  if (Number.isNaN(t)) return 0;
+  return Math.max(0, Math.floor((now - t) / 86_400_000));
+}
+
+/** Human "measured today / yesterday / N days ago" from a snapshot date. */
+export function measuredLabel(dateStr: string | null | undefined, now = Date.now()): string {
+  const d = daysSince(dateStr, now);
+  return d <= 0 ? "measured today" : d === 1 ? "measured yesterday" : `measured ${d} days ago`;
+}
+
 /** Truncate a long digest/hash for display. */
 export function shortHash(h: string | null | undefined): string {
   if (!h) return "—";

@@ -1,4 +1,5 @@
 import type { Summary } from "../../api/types";
+import { measuredLabel } from "../../lib/format";
 
 /** Reproducibility + provenance footer. */
 export default function Footer({ summary }: { summary: Summary }) {
@@ -12,7 +13,7 @@ export default function Footer({ summary }: { summary: Summary }) {
         ({summary.hiro_stats.requests} requests, {summary.hiro_stats.errors} errors).
       </p>
       <p className="mt-2">
-        Snapshot {summary.as_of_date} · dataset digest{" "}
+        Snapshot {summary.as_of_date} ({measuredLabel(summary.as_of_date)}) · auto re-harvests every 6h · dataset digest{" "}
         <code className="rounded-sm bg-muted/15 px-1 font-mono text-ink">{summary.digest.slice(0, 16)}…</code> · MIT · no
         custody, no funds. Chain is source of truth; vendor APIs are the cross-check.
       </p>

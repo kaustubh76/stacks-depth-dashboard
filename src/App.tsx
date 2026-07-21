@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { bakedData } from "./api/data";
 import { useScenario } from "./hooks/useHashState";
@@ -16,6 +16,8 @@ import { useToast } from "./components/ui/Toast";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 import StickyHeader, { type NavSection } from "./components/StickyHeader";
 import SectionBand from "./components/SectionBand";
+import LiveTicker from "./components/LiveTicker";
+import { matchDrift, snapshotPools } from "./lib/live";
 import TradePlanPage from "./components/TradePlanPage";
 import PoolDetailPage from "./components/PoolDetailPage";
 import CommandPalette from "./components/cockpit/CommandPalette";
@@ -66,6 +68,13 @@ export default function App() {
   const { live, refresh } = useLiveData(liveEnabled);
   const selection = usePoolSelection();
   const { toast } = useToast();
+
+  // Live-adjusted movable @≤2% — the snapshot figure scaled by live/snapshot liquidity where
+  // DexScreener tracks the pool. Labelled est.; never overwrites the measured number.
+  const liveMovableEst = useMemo(
+    () => matchDrift(snapshotPools(ladders), live.dexPairs, study.verdict.movable_at_2pct_usd).liveMovableEst,
+    [ladders, live.dexPairs, study.verdict.movable_at_2pct_usd],
+  );
 
   const copyLink = useCallback(() => {
     try {
@@ -216,12 +225,19 @@ export default function App() {
       <Tour />
 
       <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
-        <Masthead asOf={summary.as_of_date} live={false} />
+        <Masthead asOf={summary.as_of_date} />
+
+        {/* Live ribbon — the top of the page reads current, not frozen */}
+        <LiveTicker live={live} />
 
         {/* Hero strip — the answer at a glance + the primary path */}
         <div className="mb-6 flex flex-col gap-3 rounded-sm border-3 border-[color:var(--thick-line)] bg-panel2/40 p-4 shadow-brut-sm sm:flex-row sm:items-center sm:justify-between">
           <div className="font-mono text-[13px] leading-relaxed text-sub">
-            <b className="text-brand">{usd0(study.verdict.movable_at_2pct_usd)}</b> moves at ≤2% ·{" "}
+            <b className="text-brand">{usd0(study.verdict.movable_at_2pct_usd)}</b> moves at ≤2%
+            {liveMovableEst !== null && (
+              <span className="text-muted"> (≈{usd0(liveMovableEst)} live<span className="text-[9px] uppercase"> est.</span>)</span>
+            )}{" "}
+            ·{" "}
             <b className="text-ink">
               {study.verdict.n_tradeable_assets}/{study.verdict.thresholds.min_independent_assets}
             </b>{" "}

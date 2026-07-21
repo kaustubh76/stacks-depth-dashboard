@@ -1,9 +1,11 @@
 import StatusPill from "../ui/StatusPill";
 import { useTheme } from "../../hooks/useTheme";
+import { daysSince, measuredLabel } from "../../lib/format";
 
 /** Title band + freshness pill + theme toggle. */
-export default function Masthead({ asOf, live }: { asOf: string; live: boolean }) {
+export default function Masthead({ asOf }: { asOf: string }) {
   const { theme, toggle } = useTheme();
+  const stale = daysSince(asOf) > 2;
   return (
     <header className="mb-6">
       <div className="flex items-start justify-between gap-4">
@@ -25,16 +27,12 @@ export default function Masthead({ asOf, live }: { asOf: string; live: boolean }
         </button>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2 font-mono text-[12px] text-muted">
-        {live ? (
-          <StatusPill tone="up" dot pulse srText="live from /api/stacks/dashboard">
-            LIVE
-          </StatusPill>
-        ) : (
-          <StatusPill tone="neutral" dot srText="committed snapshot — no live backend attached">
-            SNAPSHOT · {asOf}
-          </StatusPill>
-        )}
-        <span className="opacity-80">chain is source of truth · vendor APIs are the cross-check</span>
+        <StatusPill tone={stale ? "warn" : "up"} dot srText={`on-chain measurement ${measuredLabel(asOf)}`}>
+          {measuredLabel(asOf)}
+        </StatusPill>
+        <span className="opacity-80">
+          {asOf} snapshot · re-harvests every 6h · chain is source of truth, vendor APIs cross-check
+        </span>
       </div>
     </header>
   );
