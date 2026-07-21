@@ -6,6 +6,16 @@ export function usd0(n: number | null | undefined): string {
   return `$${Math.round(n).toLocaleString("en-US")}`;
 }
 
+/** Compact USD for large headline figures (e.g. 1_487_377 → "$1.49M"). */
+export function usdCompact(n: number | null | undefined, dp = 2): string {
+  if (n === null || n === undefined || Number.isNaN(n)) return "—";
+  const abs = Math.abs(n);
+  if (abs >= 1e9) return `$${(n / 1e9).toFixed(dp)}B`;
+  if (abs >= 1e6) return `$${(n / 1e6).toFixed(dp)}M`;
+  if (abs >= 1e3) return `$${(n / 1e3).toFixed(0)}k`;
+  return `$${Math.round(n)}`;
+}
+
 /** USD with a fixed number of decimals. */
 export function usd(n: number | null | undefined, dp = 2): string {
   if (n === null || n === undefined || Number.isNaN(n)) return "—";

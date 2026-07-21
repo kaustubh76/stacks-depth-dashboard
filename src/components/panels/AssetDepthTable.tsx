@@ -2,9 +2,11 @@ import { useMemo, useState } from "react";
 
 import type { DepthLadder, Verdict } from "../../api/types";
 import { byAssetAtSlippage } from "../../lib/depth";
+import { downloadText, assetDepthCsv } from "../../lib/export";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
+import { ChipButton } from "../ui/ChipButton";
 import { usd0, pct } from "../../lib/format";
 
 const COLS = ["0.005", "0.010", "0.020", "0.050"] as const;
@@ -18,11 +20,13 @@ export default function AssetDepthTable({
   verdict,
   ladders,
   budget,
+  onPlanAsset,
 }: {
   byAsset: Record<string, Record<string, number>>;
   verdict: Verdict;
   ladders: DepthLadder[];
   budget: number;
+  onPlanAsset: (asset: string) => void;
 }) {
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "0.020", dir: -1 });
   const bar = verdict.thresholds.min_asset_depth_2pct_usd;
@@ -53,7 +57,21 @@ export default function AssetDepthTable({
   );
 
   return (
-    <Card label="Movable at each budget — by asset" tier="supporting">
+    <Card
+      label="Movable at each budget — by asset"
+      tier="supporting"
+      right={
+        <ChipButton
+          onClick={() =>
+            downloadText(`stacks-asset-depth-at-${(budget * 100).toFixed(2)}pct.csv`, "text/csv", assetDepthCsv(byAsset, live, budget))
+          }
+          title="download per-asset movable at each budget as CSV"
+          ariaLabel="Download asset depth table as CSV"
+        >
+          ⬇ csv
+        </ChipButton>
+      }
+    >
       <p className="mb-3 text-[12px] text-muted">
         click any header to sort · the <span className="text-brand">live column</span> tracks the slider (≤{pct(budget, budget < 0.01 ? 2 : 1)})
       </p>
@@ -78,7 +96,17 @@ export default function AssetDepthTable({
               const clears = r.live >= bar;
               return (
                 <tr key={r.asset} className="border-b border-edge/50 transition-colors hover:bg-panel2/40">
-                  <td className="py-1.5 pr-3 font-display font-bold text-ink">{r.asset}</td>
+                  <td className="py-1.5 pr-3 font-display font-bold text-ink">
+                    <button
+                      type="button"
+                      onClick={() => onPlanAsset(r.asset)}
+                      title={`plan a ${r.asset} trade`}
+                      aria-label={`Plan a ${r.asset} trade`}
+                      className="transition hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                    >
+                      {r.asset} →
+                    </button>
+                  </td>
                   {COLS.map((c) => (
                     <td key={c} className="py-1.5 px-3 text-right font-mono tabular-nums text-sub">{usd0(r.buckets[c])}</td>
                   ))}

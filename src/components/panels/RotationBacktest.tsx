@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import type { Audit } from "../../api/types";
+import { downloadText, backtestCsv } from "../../lib/export";
 import Card from "../ui/Card";
 import { ChipButton } from "../ui/ChipButton";
 import { pct, signedPct } from "../../lib/format";
@@ -23,7 +24,19 @@ export default function RotationBacktest({ audit, budget }: { audit: Audit; budg
   };
 
   return (
-    <Card label="Rotation backtest — the second angle" tier="supporting">
+    <Card
+      label="Rotation backtest — the second angle"
+      tier="supporting"
+      right={
+        <ChipButton
+          onClick={() => downloadText("stacks-rotation-backtest.csv", "text/csv", backtestCsv(audit))}
+          title="download the backtest results as CSV"
+          ariaLabel="Download rotation backtest as CSV"
+        >
+          ⬇ csv
+        </ChipButton>
+      }
+    >
       <p className="mb-3 max-w-2xl text-[12px] leading-snug text-muted">
         A long-only momentum rotation over {audit.tokens.join(" + ")} ({audit.n_assets} assets, {audit.n_bars} daily
         bars). Total return degrades monotonically with trading friction — no edge survives, corroborating the depth

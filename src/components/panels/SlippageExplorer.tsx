@@ -2,9 +2,10 @@ import { motion, useReducedMotion } from "framer-motion";
 import { useMemo, useRef, useState } from "react";
 
 import type { DepthLadder } from "../../api/types";
-import { poolKey, slippageAt, realizedForNotional } from "../../lib/depth";
+import { poolKey, slippageAt, slippageTrace, realizedForNotional } from "../../lib/depth";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
+import ReasoningReveal from "../ui/ReasoningReveal";
 import { usd0, pct } from "../../lib/format";
 
 const PALETTE = ["#38b2c4", "#43b581", "#d9a23a", "#8b9dff", "#e0728a", "#3861fb", "#23c4d6", "#c2a633"];
@@ -39,6 +40,7 @@ export default function SlippageExplorer({
   budget,
   focus,
   onClearFocus,
+  onPlanAsset,
 }: {
   ladders: DepthLadder[];
   moveX: number;
@@ -46,6 +48,7 @@ export default function SlippageExplorer({
   budget: number;
   focus: string | null;
   onClearFocus: () => void;
+  onPlanAsset: (asset: string) => void;
 }) {
   const reduce = useReducedMotion();
   const svgRef = useRef<SVGSVGElement>(null);
@@ -85,6 +88,22 @@ export default function SlippageExplorer({
 
   const readout = useMemo(() => realizedForNotional(visible, moveX), [visible, moveX]);
   const clearing = readout.filter((r) => r.feasible && r.slippage <= budget);
+
+  // "Show the math" — the cheapest asset's best pool + the exact interpolation behind its slippage.
+  const mathAsset = readout[0] ?? null;
+  let mathPool: DepthLadder | null = null;
+  if (mathAsset) {
+    let bestSlip = Infinity;
+    for (const p of ladders) {
+      if (p.major_symbol !== mathAsset.asset) continue;
+      const s = slippageAt(p.points, moveX);
+      if (s < bestSlip) {
+        bestSlip = s;
+        mathPool = p;
+      }
+    }
+  }
+  const mathTrace = mathPool ? slippageTrace(mathPool.points, moveX) : null;
 
   return (
     <Card
@@ -272,13 +291,24 @@ export default function SlippageExplorer({
               const ok = r.feasible && r.slippage <= budget;
               return (
                 <li key={r.asset} className="flex items-center justify-between gap-2 text-[13px]">
-                  <span className="flex items-center gap-1.5">
+                  <span className="flex min-w-0 items-center gap-1.5">
                     <span className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: ok ? "#43b581" : "#8a8f9c" }} />
                     <span className="font-display font-bold text-ink">{r.asset}</span>
-                    <span className="font-mono text-[10px] text-muted">{r.bestPoolSymbol}</span>
+                    <span className="truncate font-mono text-[10px] text-muted">{r.bestPoolSymbol}</span>
                   </span>
-                  <span className="font-mono tabular-nums" style={{ color: !r.feasible ? "#8a8f9c" : ok ? "#43b581" : "#e0728a" }}>
-                    {r.feasible ? pct(r.slippage, r.slippage < 0.1 ? 2 : 1) : "no fill"}
+                  <span className="flex shrink-0 items-center gap-1.5">
+                    <span className="font-mono tabular-nums" style={{ color: !r.feasible ? "#8a8f9c" : ok ? "#43b581" : "#e0728a" }}>
+                      {r.feasible ? pct(r.slippage, r.slippage < 0.1 ? 2 : 1) : "no fill"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => onPlanAsset(r.asset)}
+                      aria-label={`Plan a ${r.asset} trade`}
+                      title={`plan a ${r.asset} trade`}
+                      className="rounded-sm border border-edge px-1.5 py-0.5 font-mono text-[10px] text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                    >
+                      plan →
+                    </button>
                   </span>
                 </li>
               );
@@ -289,6 +319,51 @@ export default function SlippageExplorer({
           </p>
         </div>
       </div>
+
+      <ReasoningReveal label="Show the math" className="mt-3">
+        {mathTrace && mathPool && mathAsset ? (
+          <>
+            <p className="mb-2">
+              Cheapest route for <b>{usd0(moveX)}</b>: <b>{mathAsset.asset}</b> through <b>{mathPool.symbol}</b> (
+              {mathPool.venue}). Slippage is read off the pool's measured depth ladder
+              {mathTrace.mode === "interp" ? ", linearly interpolated between the two bracketing rungs:" : ":"}
+            </p>
+            <div className="rounded-sm border border-edge bg-panel2/50 p-2.5 font-mono text-[11.5px] leading-relaxed">
+              {mathTrace.mode === "interp" && mathTrace.below && mathTrace.above ? (
+                <>
+                  <div>
+                    rung below: {usd0(mathTrace.below.notional)} → {pct(mathTrace.below.slippage, 2)}
+                  </div>
+                  <div>
+                    rung above: {usd0(mathTrace.above.notional)} → {pct(mathTrace.above.slippage, 2)}
+                  </div>
+                  <div className="mt-1 text-sub">
+                    t = ({usd0(moveX)} − {usd0(mathTrace.below.notional)}) / ({usd0(mathTrace.above.notional)} −{" "}
+                    {usd0(mathTrace.below.notional)}) ={" "}
+                    {((moveX - mathTrace.below.notional) / (mathTrace.above.notional - mathTrace.below.notional)).toFixed(3)}
+                  </div>
+                  <div className="mt-1 font-bold text-ink">
+                    slippage = {pct(mathTrace.below.slippage, 2)} + t·({pct(mathTrace.above.slippage, 2)} −{" "}
+                    {pct(mathTrace.below.slippage, 2)}) = {pct(mathTrace.slippage, 2)}
+                  </div>
+                </>
+              ) : (
+                <div className="text-sub">
+                  {mathTrace.mode === "above-last"
+                    ? `${usd0(moveX)} is beyond the deepest measured rung (${usd0(mathTrace.below?.notional ?? 0)}) — no fill within this pool's ladder.`
+                    : `at or below the smallest measured rung — slippage floor ${pct(mathTrace.slippage, 2)}.`}
+                </div>
+              )}
+            </div>
+            <p className="mt-2 text-[11px] text-muted">
+              The same interpolation the published depth index uses (<code>slippageAt</code> / <code>maxNotionalAt</code>{" "}
+              in the compute core) — no live feed, just the frozen ladder.
+            </p>
+          </>
+        ) : (
+          <p>No measurable pool for this size.</p>
+        )}
+      </ReasoningReveal>
     </Card>
   );
 }

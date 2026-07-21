@@ -1,6 +1,6 @@
 // Typed contract for the Stacks Depth instrument. Mirrors the JSON that
 // `/api/stacks/dashboard` returns (src/ictbot/stacks/webapp.py) and that is
-// baked into src/data/*.json from the committed 2026-07-18 snapshot.
+// baked into src/data/*.json from the committed on-chain snapshot (see summary.as_of_date).
 
 export interface FlaggedPool {
   pool_id: string;

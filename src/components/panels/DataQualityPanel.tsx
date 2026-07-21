@@ -1,6 +1,8 @@
 import { useState } from "react";
 
-import type { Summary } from "../../api/types";
+import type { DepthLadder, Summary } from "../../api/types";
+import { poolKey } from "../../lib/depth";
+import { downloadText, dataQualityJson } from "../../lib/export";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
@@ -10,9 +12,21 @@ import { usd0, pct } from "../../lib/format";
 /** The honesty panel: what the vendor feeds got wrong, and how we cross-checked. The
  * clean / incl.-flagged toggle shows exactly what the flags are worth — the included
  * figure is always labelled as NOT the published number. */
-export default function DataQualityPanel({ summary }: { summary: Summary }) {
+export default function DataQualityPanel({
+  summary,
+  ladders,
+  onOpenPool,
+}: {
+  summary: Summary;
+  ladders: DepthLadder[];
+  onOpenPool: (key: string) => void;
+}) {
   const [inclFlagged, setInclFlagged] = useState(false);
   const shown = inclFlagged ? summary.volume_24h_usd_total : summary.volume_24h_usd_clean;
+  const resolveKey = (poolId: string): string | null => {
+    const cands = ladders.filter((l) => `${l.venue}:${l.pool_id}` === poolId);
+    return cands.length ? poolKey(cands.reduce((a, b) => (b.depth_2pct_usd > a.depth_2pct_usd ? b : a))) : null;
+  };
 
   return (
     <Card
@@ -25,6 +39,13 @@ export default function DataQualityPanel({ summary }: { summary: Summary }) {
           </ChipButton>
           <ChipButton active={inclFlagged} onClick={() => setInclFlagged(true)} ariaLabel="Show volume including flagged outliers">
             incl. flagged
+          </ChipButton>
+          <ChipButton
+            onClick={() => downloadText("stacks-data-quality.json", "application/json", dataQualityJson(summary))}
+            title="download the data-quality summary (flags + disagreements) as JSON"
+            ariaLabel="Download data quality summary as JSON"
+          >
+            ⬇ json
           </ChipButton>
         </span>
       }
@@ -63,7 +84,19 @@ export default function DataQualityPanel({ summary }: { summary: Summary }) {
               <StatusPill tone="warn" srText="flagged data-quality outlier">
                 volume flag
               </StatusPill>
-              <code className="rounded-sm bg-muted/15 px-1 font-mono text-[11px] text-sub">{f.symbol}</code>
+              {resolveKey(f.pool_id) ? (
+                <button
+                  type="button"
+                  onClick={() => onOpenPool(resolveKey(f.pool_id)!)}
+                  title={`open ${f.symbol} pool page`}
+                  aria-label={`Open ${f.symbol} pool detail page`}
+                  className="rounded-sm bg-muted/15 px-1 font-mono text-[11px] text-sub underline decoration-dotted underline-offset-2 transition hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                >
+                  {f.symbol} ↗
+                </button>
+              ) : (
+                <code className="rounded-sm bg-muted/15 px-1 font-mono text-[11px] text-sub">{f.symbol}</code>
+              )}
               {inclFlagged && <StatusPill tone="neutral" srText="currently included in the figure above">included above</StatusPill>}
             </div>
             <p className="text-[13px] leading-snug text-sub">

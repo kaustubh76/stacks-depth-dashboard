@@ -30,6 +30,7 @@ export default function PoolDetailPage({
   onOpenPlan,
   onClose,
   shareLink,
+  asOf,
 }: {
   ladders: DepthLadder[];
   live: LiveState;
@@ -41,6 +42,7 @@ export default function PoolDetailPage({
   onOpenPlan: () => void;
   onClose: () => void;
   shareLink: () => string;
+  asOf: string;
 }) {
   const { theme, toggle } = useTheme();
   const ladder = useMemo(() => ladders.find((l) => poolKey(l) === poolKeyStr) ?? null, [ladders, poolKeyStr]);
@@ -121,7 +123,7 @@ export default function PoolDetailPage({
         </div>
         <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">{ladder.symbol}</h1>
         <p className="mt-2 font-mono text-[12px] text-muted">
-          measured from the frozen 2026-07-18 on-chain snapshot · #{derived.rank} of {derived.total} pools by depth @≤2%
+          measured from the frozen {asOf} on-chain snapshot · #{derived.rank} of {derived.total} pools by depth @≤2%
         </p>
 
         {/* Stat tiles */}

@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { DepthLadder } from "../../api/types";
 import { maxNotionalAt, poolKey } from "../../lib/depth";
 import { COMPARE_CAP, type PoolSelection } from "../../hooks/usePoolSelection";
 import { flashSection, sectionId } from "../../lib/sections";
+import { FILTER_POOLS_VENUE_EVENT } from "../../lib/cockpit";
 import { pct, usd0 } from "../../lib/format";
 import Card from "../ui/Card";
 import { ChipButton } from "../ui/ChipButton";
@@ -40,6 +41,19 @@ export default function PoolBrowser({
   const [assets, setAssets] = useState<Set<string>>(() => new Set());
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<{ key: SortKey; dir: 1 | -1 }>({ key: "maxAtBudget", dir: -1 });
+
+  // Deep-link from the Venues table: filter to a single venue (clearing other filters).
+  useEffect(() => {
+    const onFilterVenue = (e: Event) => {
+      const venue = (e as CustomEvent<{ venue?: string }>).detail?.venue;
+      if (!venue) return;
+      setVenues(new Set([venue]));
+      setAssets(new Set());
+      setQ("");
+    };
+    window.addEventListener(FILTER_POOLS_VENUE_EVENT, onFilterVenue);
+    return () => window.removeEventListener(FILTER_POOLS_VENUE_EVENT, onFilterVenue);
+  }, []);
 
   const assetNames = useMemo(() => [...new Set(ladders.map((l) => l.major_symbol))], [ladders]);
   const venueCounts = useMemo(() => {

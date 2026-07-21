@@ -22,11 +22,13 @@ export default function DepthCalculator({
   moveX,
   setMoveX,
   budget,
+  onPlanAsset,
 }: {
   ladders: DepthLadder[];
   moveX: number;
   setMoveX: (n: number) => void;
   budget: number;
+  onPlanAsset: (asset: string) => void;
 }) {
   const rows = realizedForNotional(ladders, moveX);
   const clearing = rows.filter((r) => r.feasible && r.slippage <= budget);
@@ -104,6 +106,15 @@ export default function DepthCalculator({
                 {r.feasible ? <AnimatedNumber value={r.slippage} format={(n) => pct(n, n < 0.1 ? 2 : 1)} duration={0.35} /> : "no fill"}
               </div>
               <div className="font-mono text-[10px] text-muted">{r.bestPoolSymbol}</div>
+              <button
+                type="button"
+                onClick={() => onPlanAsset(r.asset)}
+                aria-label={`Plan a ${r.asset} trade`}
+                title={`plan a ${r.asset} trade`}
+                className="mt-1.5 w-full rounded-sm border border-edge px-1.5 py-0.5 font-mono text-[10px] text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+              >
+                plan {r.asset} →
+              </button>
             </li>
           );
         })}

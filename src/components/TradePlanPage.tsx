@@ -42,6 +42,7 @@ export default function TradePlanPage({
   planSummary,
   shareLink,
   onDownloadJson,
+  asOf,
 }: {
   ladders: DepthLadder[];
   budget: number;
@@ -54,6 +55,7 @@ export default function TradePlanPage({
   planSummary: () => string;
   shareLink: () => string;
   onDownloadJson: () => void;
+  asOf: string;
 }) {
   const { theme, toggle } = useTheme();
   const plan = useMemo(() => planTrade(ladders, asset, moveX, budget), [ladders, asset, moveX, budget]);
@@ -118,7 +120,7 @@ export default function TradePlanPage({
           Move {usd0(moveX)} of {asset}
         </h1>
         <p className="mt-2 font-mono text-[12px] text-muted">
-          routed from the frozen 2026-07-18 on-chain snapshot · target ≤{pct(budget, budget < 0.01 ? 2 : 1)} slippage ·
+          routed from the frozen {asOf} on-chain snapshot · target ≤{pct(budget, budget < 0.01 ? 2 : 1)} slippage ·
           not a live quote
         </p>
 

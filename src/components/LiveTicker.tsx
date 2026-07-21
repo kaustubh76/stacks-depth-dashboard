@@ -5,7 +5,15 @@ import StatusPill from "./ui/StatusPill";
 
 /** A thin always-on live ribbon so the very top of the page reads current, not frozen:
  * Stacks block height + STX/BTC price + "updated Ns ago", straight from the public feeds. */
-export default function LiveTicker({ live }: { live: LiveState }) {
+export default function LiveTicker({
+  live,
+  onRefresh,
+  onCopyLink,
+}: {
+  live: LiveState;
+  onRefresh?: () => void;
+  onCopyLink?: () => void;
+}) {
   const now = useNow(1000);
   const on = live.anyLive;
   return (
@@ -36,7 +44,31 @@ export default function LiveTicker({ live }: { live: LiveState }) {
           DEX liq <span className="text-sub">{usd0(live.dexLiquidityTotal)}</span>
         </span>
       )}
-      <span className="ml-auto opacity-70">{on ? `updated ${ago(live.updatedChain ?? live.updatedPrice, now)}` : "connecting…"}</span>
+      <span className="ml-auto flex items-center gap-2">
+        <span className="opacity-70">{on ? `updated ${ago(live.updatedChain ?? live.updatedPrice, now)}` : "connecting…"}</span>
+        {onRefresh && (
+          <button
+            type="button"
+            onClick={onRefresh}
+            aria-label="Refresh live data now"
+            title="refresh live data"
+            className="rounded-sm border border-edge px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+          >
+            ↻ refresh
+          </button>
+        )}
+        {onCopyLink && (
+          <button
+            type="button"
+            onClick={onCopyLink}
+            aria-label="Copy a shareable link to this view"
+            title="copy a shareable link to this exact view"
+            className="rounded-sm border border-edge px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+          >
+            ⧉ copy link
+          </button>
+        )}
+      </span>
     </div>
   );
 }

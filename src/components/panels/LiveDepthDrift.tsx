@@ -7,7 +7,7 @@ import { useNow } from "../../hooks/useNow";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
-import { usd0, ago } from "../../lib/format";
+import { usd0, usdCompact, ago } from "../../lib/format";
 
 function Drift({ pctVal }: { pctVal: number | null }) {
   if (pctVal === null || !Number.isFinite(pctVal)) return <span className="text-muted">—</span>;
@@ -23,18 +23,22 @@ function Drift({ pctVal }: { pctVal: number | null }) {
 
 /**
  * Live Depth Drift — re-quotes the deepest pools' liquidity in the browser (DexScreener) and shows
- * how far live conditions have moved from the reproducible 2026-07-18 snapshot. The measured depth
+ * how far live conditions have moved from the reproducible on-chain snapshot. The measured depth
  * numbers stay frozen (rigorous AMM quotes); this is a labelled live cross-check, never a rewrite.
  */
 export default function LiveDepthDrift({
   live,
   ladders,
   snapshotMovable,
+  snapshotTvl,
+  asOf,
   onOpenPool,
 }: {
   live: LiveState;
   ladders: DepthLadder[];
   snapshotMovable: number;
+  snapshotTvl: number;
+  asOf: string;
   onOpenPool: (key: string) => void;
 }) {
   const now = useNow(1000);
@@ -59,7 +63,7 @@ export default function LiveDepthDrift({
       }
     >
       <p className="mb-3 max-w-2xl text-[12px] leading-snug text-muted">
-        The depth measurement across this page is the reproducible 2026-07-18 snapshot (real on-chain AMM quotes). This
+        The depth measurement across this page is the reproducible {asOf} snapshot (real on-chain AMM quotes). This
         panel re-quotes pool liquidity live from DexScreener to show how far conditions have <b>drifted since</b> — it
         never changes the measured numbers.
       </p>
@@ -84,7 +88,7 @@ export default function LiveDepthDrift({
               <div className="mt-1 font-display text-xl font-bold">
                 <Drift pctVal={drift.driftPct} />
               </div>
-              <div className="mt-0.5 font-mono text-[10px] text-muted">liquidity vs 2026-07-18</div>
+              <div className="mt-0.5 font-mono text-[10px] text-muted">liquidity vs {asOf}</div>
             </div>
             <div className="rounded-sm border border-edge bg-panel2/50 p-3">
               <div className="card-label">
@@ -144,7 +148,7 @@ export default function LiveDepthDrift({
           </div>
           <p className="mt-2.5 font-mono text-[10px] text-muted">
             source: DexScreener live · matched by venue + token pair · coverage is partial (DexScreener tracks the more
-            active Stacks pools). The full-ecosystem measurement basis is the snapshot's $1.48M TVL.
+            active Stacks pools). The full-ecosystem measurement basis is the snapshot's {usdCompact(snapshotTvl)} TVL.
           </p>
         </>
       )}

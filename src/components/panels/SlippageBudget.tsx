@@ -5,6 +5,7 @@ import { recomputeVerdict } from "../../lib/depth";
 import { BUDGET_MIN, BUDGET_MAX } from "../../hooks/useHashState";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
+import InfoTip from "../ui/Tooltip";
 import { usd0, pct } from "../../lib/format";
 
 const intFmt = (n: number) => String(Math.round(n));
@@ -36,7 +37,15 @@ export default function SlippageBudget({
     <div className="glow-card mb-4 p-4" id="budget-control">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <span className="card-label">Slippage budget</span>
+          <span className="card-label">
+            Slippage budget
+            <InfoTip
+              title="slippage"
+              side="bottom"
+              text="The price you lose to market impact: the gap between the quoted mid-price and your average fill. Measured from real on-chain AMM quotes."
+              className="ml-1"
+            />
+          </span>
           <span className="font-display text-2xl font-bold tabular-nums text-brand metric-glow">≤{pct(budget, budget < 0.01 ? 2 : 1)}</span>
           {!atSnapshot && (
             <StatusPill tone="info" srText="recomputed at your chosen budget">
@@ -88,7 +97,14 @@ export default function SlippageBudget({
 
       <div className="mt-3 grid grid-cols-3 gap-3 border-t border-edge pt-3">
         <div>
-          <div className="card-label">Movable</div>
+          <div className="card-label">
+            Movable
+            <InfoTip
+              title="movable"
+              text="Total capital the whole ecosystem can absorb at ≤ your slippage budget — summed across every measured pool."
+              className="ml-1"
+            />
+          </div>
           <div className="font-display text-xl font-bold tabular-nums text-brand">
             <AnimatedNumber value={v.movable} format={usd0} duration={0.45} />
           </div>
@@ -101,7 +117,14 @@ export default function SlippageBudget({
           </div>
         </div>
         <div>
-          <div className="card-label">Rotation</div>
+          <div className="card-label">
+            Rotation
+            <InfoTip
+              title="rotation viable"
+              text="Whether a systematic strategy could rotate between assets: it needs ≥3 independent assets each deep enough to trade."
+              className="ml-1"
+            />
+          </div>
           <div className="mt-1">
             <StatusPill tone={v.rotationViable ? "up" : "down"} dot srText={v.rotationViable ? "viable" : "not viable"}>
               {v.rotationViable ? "viable" : "not viable"}

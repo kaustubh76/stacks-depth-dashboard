@@ -57,13 +57,17 @@ function LiveTile({
 export default function LiveCrossCheck({
   live,
   snapshotCleanVol,
+  asOf,
   enabled,
   onToggle,
+  onRefresh,
 }: {
   live: LiveState;
   snapshotCleanVol: number;
+  asOf: string;
   enabled: boolean;
   onToggle: () => void;
+  onRefresh?: () => void;
 }) {
   const now = useNow(1000);
 
@@ -107,11 +111,22 @@ export default function LiveCrossCheck({
           >
             {enabled ? "pause" : "resume"}
           </button>
+          {onRefresh && (
+            <button
+              type="button"
+              onClick={onRefresh}
+              aria-label="Refresh live data now"
+              title="refresh live data"
+              className="rounded-sm border border-edge px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              ↻ refresh
+            </button>
+          )}
         </div>
       }
     >
       <p className="mb-3 text-[12px] leading-snug text-muted">
-        Live from the chain and public price/DEX feeds — a real-time check on the frozen 2026-07-18 measurement
+        Live from the chain and public price/DEX feeds — a real-time check on the frozen {asOf} measurement
         below. These update; the snapshot does not.
       </p>
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">

@@ -1,7 +1,11 @@
 import { useMemo, useState } from "react";
 
 import type { Summary, VenueName, Venue } from "../../api/types";
+import { flashSection, sectionId } from "../../lib/sections";
+import { FILTER_POOLS_VENUE_EVENT } from "../../lib/cockpit";
+import { downloadText, venuesCsv } from "../../lib/export";
 import Card from "../ui/Card";
+import { ChipButton } from "../ui/ChipButton";
 import { usd0, int } from "../../lib/format";
 
 const NAMES: VenueName[] = ["bitflow", "alex", "velar"];
@@ -33,8 +37,25 @@ export default function VenuesBreakdown({ summary }: { summary: Summary }) {
     setSort((s) => (s.key === key ? { key, dir: (s.dir * -1) as 1 | -1 } : { key, dir: key === "name" ? 1 : -1 }));
   const arrow = (key: Col["key"]) => (sort.key === key ? (sort.dir === -1 ? " ▾" : " ▴") : "");
 
+  const openVenue = (venue: VenueName) => {
+    window.dispatchEvent(new CustomEvent(FILTER_POOLS_VENUE_EVENT, { detail: { venue } }));
+    flashSection(sectionId("Pool browser"));
+  };
+
   return (
-    <Card label="Venues — pools, TVL, and real activity" tier="supporting">
+    <Card
+      label="Venues — pools, TVL, and real activity"
+      tier="supporting"
+      right={
+        <ChipButton
+          onClick={() => downloadText("stacks-venues.csv", "text/csv", venuesCsv(summary))}
+          title="download the venue breakdown as CSV"
+          ariaLabel="Download venues table as CSV"
+        >
+          ⬇ csv
+        </ChipButton>
+      }
+    >
       <p className="mb-3 text-[12px] text-muted">click any header to sort</p>
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
@@ -53,7 +74,17 @@ export default function VenuesBreakdown({ summary }: { summary: Summary }) {
           <tbody>
             {rows.map(({ n, v }) => (
               <tr key={n} className="border-b border-edge/50 transition-colors hover:bg-panel2/40">
-                <td className="py-1.5 pr-3 font-display font-bold text-ink">{PRETTY[n]}</td>
+                <td className="py-1.5 pr-3 font-display font-bold text-ink">
+                  <button
+                    type="button"
+                    onClick={() => openVenue(n)}
+                    title={`show ${PRETTY[n]} pools in the pool browser`}
+                    aria-label={`Filter the pool browser to ${PRETTY[n]}`}
+                    className="transition hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                  >
+                    {PRETTY[n]} →
+                  </button>
+                </td>
                 <td className="py-1.5 px-3 text-right font-mono tabular-nums text-sub">{int(v.pools)}</td>
                 <td className="py-1.5 px-3 text-right font-mono tabular-nums" style={{ color: "#43b581" }}>{int(v.live)}</td>
                 <td className="py-1.5 px-3 text-right font-mono tabular-nums text-sub">{usd0(v.tvl_usd)}</td>

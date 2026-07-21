@@ -73,10 +73,20 @@ export default function App() {
   const copyLink = useCallback(() => {
     try {
       void navigator.clipboard?.writeText(shareLink());
+      toast.success("Share link copied");
     } catch {
       /* clipboard blocked — hash is still in the address bar */
     }
-  }, [shareLink]);
+  }, [shareLink, toast]);
+
+  /** Set the asset and jump into the full Trade Plan page (shared by explorer/calculator/table rows). */
+  const planAsset = useCallback(
+    (a: string) => {
+      setAsset(a);
+      openPlan();
+    },
+    [setAsset, openPlan],
+  );
 
   /** The current scenario as a copyable one-paragraph blurb (planner + presets share it). */
   const planSummary = useCallback(
@@ -170,6 +180,7 @@ export default function App() {
         planSummary={planSummary}
         shareLink={shareLink}
         onDownloadJson={downloadScenarioJson}
+        asOf={summary.as_of_date}
       />
     );
   }
@@ -187,6 +198,7 @@ export default function App() {
         onOpenPlan={openPlan}
         onClose={goDashboard}
         shareLink={shareLink}
+        asOf={summary.as_of_date}
       />
     );
   }
@@ -222,12 +234,12 @@ export default function App() {
         <Masthead asOf={summary.as_of_date} />
 
         {/* Live ribbon — the top of the page reads current, not frozen */}
-        <LiveTicker live={live} />
+        <LiveTicker live={live} onRefresh={refresh} onCopyLink={copyLink} />
 
         {/* ── THE ANSWER ── the headline finding, stated once */}
         <div id={sectionId("Answer")} data-section-label="Answer" className="scroll-mt-28">
           <Panel label="Verdict">
-            <VerdictBanner verdict={study.verdict} ladders={ladders} budget={budget} />
+            <VerdictBanner verdict={study.verdict} ladders={ladders} budget={budget} facts={data.facts} />
           </Panel>
           <Panel label="Headline">
             <HeadlineTiles summary={summary} verdict={study.verdict} />
@@ -279,6 +291,7 @@ export default function App() {
               budget={budget}
               focus={selection.focusKey}
               onClearFocus={() => selection.setFocus(null)}
+              onPlanAsset={planAsset}
             />
           </Panel>
         </div>
@@ -315,16 +328,16 @@ export default function App() {
             />
           </Panel>
           <Panel label="Depth calculator">
-            <DepthCalculator ladders={ladders} moveX={moveX} setMoveX={setMoveX} budget={budget} />
+            <DepthCalculator ladders={ladders} moveX={moveX} setMoveX={setMoveX} budget={budget} onPlanAsset={planAsset} />
           </Panel>
         </SectionBand>
 
         <SectionBand title="Live detail" summary="live price/DEX cross-check + per-pool liquidity drift" defaultOpen={false}>
           <Panel label="Live cross-check">
-            <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} />
+            <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} asOf={summary.as_of_date} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} onRefresh={refresh} />
           </Panel>
           <Panel label="Live depth drift">
-            <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} onOpenPool={openPool} />
+            <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} snapshotTvl={summary.tvl_usd_total} asOf={summary.as_of_date} onOpenPool={openPool} />
           </Panel>
         </SectionBand>
 
@@ -344,10 +357,10 @@ export default function App() {
           </Panel>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Panel label="Movable by budget">
-              <MovableByThreshold depth={study.depth_index} ladders={ladders} budget={budget} setBudget={setBudget} />
+              <MovableByThreshold depth={study.depth_index} ladders={ladders} budget={budget} setBudget={setBudget} onOpenPool={openPool} />
             </Panel>
             <Panel label="Asset depth">
-              <AssetDepthTable byAsset={study.depth_index.by_asset} verdict={study.verdict} ladders={ladders} budget={budget} />
+              <AssetDepthTable byAsset={study.depth_index.by_asset} verdict={study.verdict} ladders={ladders} budget={budget} onPlanAsset={planAsset} />
             </Panel>
           </div>
         </SectionBand>
@@ -355,7 +368,7 @@ export default function App() {
         <SectionBand title="The evidence" summary="data quality · venues · backtest · provenance" defaultOpen={false}>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Panel label="Data quality">
-              <DataQualityPanel summary={summary} />
+              <DataQualityPanel summary={summary} ladders={ladders} onOpenPool={openPool} />
             </Panel>
             <Panel label="Venues">
               <VenuesBreakdown summary={summary} />

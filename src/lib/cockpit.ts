@@ -12,6 +12,10 @@ export const START_TOUR_EVENT = "sd:tour";
 export const FOCUS_PLANNER_EVENT = "sd:plan-focus";
 /** Fire (detail: {bandId}) to expand a collapsed SectionBand before scrolling to it. */
 export const OPEN_SECTION_EVENT = "sd:open-section";
+/** Fire (detail: {key}) to deep-link a specific Provenance claim row: clear its filters + flash it. */
+export const TRACE_CLAIM_EVENT = "sd:trace-claim";
+/** Fire (detail: {venue}) to filter the Pool browser to a single venue (from the Venues table). */
+export const FILTER_POOLS_VENUE_EVENT = "sd:filter-venue";
 
 /** `g`-then-key quick-nav. Curated, collision-free letters → panel labels. */
 export interface NavKey {

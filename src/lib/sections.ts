@@ -3,6 +3,8 @@
 // discovers the actual panels from the DOM at open time (elements carrying
 // `data-section-label`), so this stays in sync even as panels are added/renamed.
 
+import { TRACE_CLAIM_EVENT } from "./cockpit";
+
 export function sectionId(label: string): string {
   return "sec-" + label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 }
@@ -27,4 +29,14 @@ export function flashSection(id: string): void {
   } else {
     flash();
   }
+}
+
+/** Deep-link to a specific Provenance claim row: open the evidence band + scroll Provenance into
+ * view, then tell the panel to clear its filters and flash the exact claim. Backs the "trace →
+ * source" chips in the reasoning reveals. */
+export function traceClaim(key: string): void {
+  flashSection(sectionId("Provenance"));
+  window.setTimeout(() => {
+    window.dispatchEvent(new CustomEvent(TRACE_CLAIM_EVENT, { detail: { key } }));
+  }, 140);
 }

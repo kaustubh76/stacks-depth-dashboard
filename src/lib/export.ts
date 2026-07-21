@@ -3,7 +3,7 @@
 // snapshot is the only source of truth (never live feeds). `downloadText` must only
 // ever be called from event handlers (StrictMode double-invokes effects).
 
-import type { DepthLadder, Study, Summary, Verdict } from "../api/types";
+import type { Audit, DepthLadder, Study, Summary, Verdict } from "../api/types";
 import type { RecomputedVerdict, TradePlan } from "./depth";
 import { maxNotionalAt, planTrade, poolKey, recomputeVerdict } from "./depth";
 import { pct, usd0 } from "./format";
@@ -66,7 +66,7 @@ export function buildScenario(
     plan: planTrade(ladders, asset, moveX, budget),
     verdict: recomputeVerdict(ladders, budget, study.verdict.thresholds),
     official_thresholds: study.verdict.thresholds,
-    note: "Recomputed client-side from the committed 2026-07-18 depth ladders (snapshot, not live).",
+    note: `Recomputed client-side from the committed ${summary.as_of_date} depth ladders (snapshot, not live).`,
   };
 }
 
@@ -89,5 +89,57 @@ export function scenarioSummary(s: ScenarioExport, shareLink: string): string {
     `Stacks Depth scenario (snapshot ${s.as_of}): move ${usd0(s.move_x)} of ${s.asset} at ≤${pct(s.budget, 2)} — ${route}. ` +
     `Ecosystem: ${usd0(verdict.movable)} movable at this budget, ${verdict.nTradeable} tradeable asset(s) ` +
     `[${verdict.tradeable.join(", ") || "none"}], rotation ${verdict.rotationViable ? "viable" : "not viable"}. ${shareLink}`
+  );
+}
+
+/** Per-venue market structure as CSV (evidence-panel export). */
+export function venuesCsv(summary: Summary): string {
+  const header = "venue,pools,live,dead,dormant,tvl_usd,volume_24h_usd_dex,swaps_24h";
+  const order: (keyof Summary["venues"])[] = ["bitflow", "alex", "velar"];
+  const rows = order
+    .filter((n) => summary.venues[n])
+    .map((n) => {
+      const v = summary.venues[n];
+      return [n, v.pools, v.live, v.dead, v.dormant, v.tvl_usd, v.volume_24h_usd_dex, v.swaps_24h].map(csvEscape).join(",");
+    });
+  return [header, ...rows].join("\n") + "\n";
+}
+
+/** Rotation backtest results as CSV (one row per friction level). */
+export function backtestCsv(audit: Audit): string {
+  const header = "one_way,total_return,max_dd,median_weekly_ret,pct_windows_up,n_windows";
+  const rows = [...audit.results]
+    .sort((a, b) => a.one_way - b.one_way)
+    .map((r) => [r.one_way, r.total_return, r.max_dd, r.median_weekly_ret, r.pct_windows_up, r.n_windows].map(csvEscape).join(","));
+  return [header, ...rows].join("\n") + "\n";
+}
+
+/** Per-asset movable USD at each measured budget + a live column at the caller's budget, as CSV. */
+export function assetDepthCsv(
+  byAsset: Record<string, Record<string, number>>,
+  live: Record<string, number>,
+  budget: number,
+): string {
+  const header = `asset,movable_0.5pct,movable_1pct,movable_2pct,movable_5pct,movable_at_${(budget * 100).toFixed(2)}pct`;
+  const rows = Object.entries(byAsset).map(([asset, b]) =>
+    [asset, b["0.005"] ?? 0, b["0.010"] ?? 0, b["0.020"] ?? 0, b["0.050"] ?? 0, live[asset] ?? 0].map(csvEscape).join(","),
+  );
+  return [header, ...rows].join("\n") + "\n";
+}
+
+/** The data-quality summary (flagged pools + cross-feed disagreements) as JSON. */
+export function dataQualityJson(summary: Summary): string {
+  return JSON.stringify(
+    {
+      as_of: summary.as_of_date,
+      volume_24h_usd_clean: summary.volume_24h_usd_clean,
+      volume_24h_usd_total: summary.volume_24h_usd_total,
+      volume_24h_usd_flagged: summary.volume_24h_usd_flagged,
+      volume_24h_usd_dex_total: summary.volume_24h_usd_dex_total,
+      flagged_pools: summary.flagged_pools,
+      price_disagreements: summary.price_disagreements,
+    },
+    null,
+    2,
   );
 }

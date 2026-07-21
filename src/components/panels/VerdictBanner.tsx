@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
-import type { DepthLadder, Verdict } from "../../api/types";
-import { recomputeVerdict } from "../../lib/depth";
+import type { DepthLadder, Facts, Verdict } from "../../api/types";
+import { byAssetAtSlippage, recomputeVerdict } from "../../lib/depth";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
 import { ChipButton } from "../ui/ChipButton";
+import ReasoningReveal, { TraceChip } from "../ui/ReasoningReveal";
 import { usd0, pct } from "../../lib/format";
 
 const TARGET_CHIPS = [25000, 50000, 100000, 250000];
@@ -29,10 +30,12 @@ export default function VerdictBanner({
   verdict,
   ladders,
   budget,
+  facts,
 }: {
   verdict: Verdict;
   ladders: DepthLadder[];
   budget: number;
+  facts: Facts;
 }) {
   const [whatIf, setWhatIf] = useState<WhatIf | null>(null);
 
@@ -57,6 +60,19 @@ export default function VerdictBanner({
   const effectiveViable = rv ? rv.rotationViable : verdict.rotation_viable;
   const deployOk = whatIf || offSnapshot ? movable >= target : verdict.can_deploy_50k_at_2pct;
   const rail = effectiveViable ? "#43b581" : "#e0728a";
+
+  // Real sources for the reasoning reveals (each claim carries its on-chain / vendor origin).
+  const srcOf = (k: string): string => facts.claims.find((c) => c.key === k)?.source ?? "";
+
+  // "What would it take?" — rank assets by movable at the CURRENT budget; the closest asset still
+  // below the depth bar is the gap to a viable rotation. Recomputes live as the budget changes.
+  const bar = verdict.thresholds.min_asset_depth_2pct_usd;
+  const rankedAssets = useMemo(
+    () => Object.entries(byAssetAtSlippage(ladders, budget)).sort((a, b) => b[1] - a[1]),
+    [ladders, budget],
+  );
+  const clearing = rankedAssets.filter(([, v]) => v >= bar);
+  const nextBelow = rankedAssets.find(([, v]) => v < bar) ?? null;
 
   const setTarget = (t: number) =>
     setWhatIf({ target: Math.min(Math.max(t, TARGET_MIN), TARGET_MAX), minAssets });
@@ -83,6 +99,68 @@ export default function VerdictBanner({
         </span>
       </div>
       <p className="text-[15px] leading-relaxed text-sub">{verdict.finding}</p>
+
+      {/* Reasoning layer — the real "why" and "what would it take", one click away (all sourced) */}
+      <div className="mt-3 flex flex-col gap-2">
+        <ReasoningReveal label="Why not viable?">
+          <p className="mb-2">
+            The finding turns on <b>diversity, not size</b>. A systematic rotation needs at least{" "}
+            <b>{officialMinAssets} independent liquid assets</b>; only <b>{verdict.n_tradeable_assets}</b> clear the{" "}
+            {usd0(verdict.thresholds.min_asset_depth_2pct_usd)} depth bar.
+          </p>
+          <ul className="space-y-1.5">
+            <li className="flex flex-wrap items-baseline gap-x-1.5">
+              <span className="font-mono text-ink">
+                {verdict.n_tradeable_assets}/{officialMinAssets} assets clear the bar
+              </span>
+              <span className="text-muted">— {verdict.tradeable_assets_at_2pct.join(", ") || "none"}</span>
+              <span className="text-[10px] text-muted">· {srcOf("tradeable_assets_at_2pct")}</span>
+              <TraceChip claimKey="tradeable_assets_at_2pct" />
+            </li>
+            <li className="flex flex-wrap items-baseline gap-x-1.5">
+              <span className="font-mono text-ink">{usd0(verdict.movable_at_2pct_usd)} total movable @≤2%</span>
+              <span className="text-muted">· deepest single pool {usd0(verdict.deepest_single_pool_usd)}</span>
+              <span className="text-[10px] text-muted">· {srcOf("depth_movable_at_2pct_usd")}</span>
+              <TraceChip claimKey="depth_movable_at_2pct_usd" />
+            </li>
+          </ul>
+          <p className="mt-2 text-muted">
+            So although {usd0(verdict.movable_at_2pct_usd)} can move and the deepest pool alone clears{" "}
+            {usd0(verdict.deepest_single_pool_usd)}, there's nothing to rotate <i>between</i> — two liquid assets isn't a
+            portfolio. A momentum backtest agrees: it loses money at every realistic friction.
+            <TraceChip claimKey="backtest_total_return_at_2pct" label="see backtest →" />
+          </p>
+        </ReasoningReveal>
+
+        <ReasoningReveal label="What would it take?" icon="△">
+          {clearing.length >= officialMinAssets ? (
+            <p>
+              ✓ At ≤{pct(budget, budget < 0.01 ? 2 : 1)}, <b>{clearing.length} assets</b> clear the {usd0(bar)} bar (
+              {clearing.map(([a]) => a).join(", ")}) — enough for a {officialMinAssets}-asset rotation.
+            </p>
+          ) : nextBelow ? (
+            <>
+              <p className="mb-2">
+                Rotation needs <b>{officialMinAssets}</b> liquid assets; <b>{clearing.length}</b> clear the {usd0(bar)}{" "}
+                bar at ≤{pct(budget, budget < 0.01 ? 2 : 1)}. The closest candidate:
+              </p>
+              <div className="rounded-sm border border-edge bg-panel2/50 p-2.5 font-mono text-[12px]">
+                <b className="text-ink">{nextBelow[0]}</b> is at {usd0(nextBelow[1])} — needs{" "}
+                <b style={{ color: "#e0728a" }}>+{usd0(bar - nextBelow[1])}</b> more depth @≤
+                {pct(budget, budget < 0.01 ? 2 : 1)} to become the next tradeable asset (#{clearing.length + 1}).
+              </div>
+              {officialMinAssets - clearing.length > 1 && (
+                <p className="mt-2 text-muted">
+                  …and {officialMinAssets - clearing.length - 1} more asset(s) beyond that.
+                </p>
+              )}
+              <p className="mt-2 text-muted">Drag the slippage budget and this recomputes live.</p>
+            </>
+          ) : (
+            <p>No asset sits below the bar to solve for.</p>
+          )}
+        </ReasoningReveal>
+      </div>
 
       {rv && (
         <div className="mt-3 flex flex-wrap items-center gap-2 rounded-sm border border-cool/30 bg-cool/5 px-3 py-2">

@@ -1,7 +1,7 @@
 // Match the committed snapshot pools to LIVE DexScreener pairs and compute liquidity drift.
 // Pure + unit-checkable. This is what makes the depth measurement itself "move": the snapshot
 // numbers stay frozen (rigorous AMM quotes), and this layer shows how far live pool liquidity
-// has drifted since 2026-07-18. Live never overwrites a snapshot number.
+// has drifted since the snapshot date. Live never overwrites a snapshot number.
 
 import type { DepthLadder } from "../api/types";
 import { poolKey } from "./depth";

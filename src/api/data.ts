@@ -1,4 +1,4 @@
-// Data loader. The committed 2026-07-18 snapshot is baked in at build time, so the
+// Data loader. The committed on-chain snapshot is baked in at build time, so the
 // dashboard renders fully static with zero backend. If a live /api/stacks/dashboard
 // answers (i.e. the FastAPI app is serving this bundle same-origin), its payload
 // overrides the baked one — exactly the graceful-degradation pattern from the

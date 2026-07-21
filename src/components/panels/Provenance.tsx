@@ -1,6 +1,7 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import type { Facts } from "../../api/types";
+import { TRACE_CLAIM_EVENT } from "../../lib/cockpit";
 import Card from "../ui/Card";
 import CopyButton from "../ui/CopyButton";
 
@@ -13,6 +14,33 @@ function fmtValue(v: number | string | boolean): string {
 export default function Provenance({ facts }: { facts: Facts }) {
   const [q, setQ] = useState("");
   const [src, setSrc] = useState<string>("all");
+  const [flashKey, setFlashKey] = useState<string | null>(null);
+
+  // Deep-link from a "trace → source" chip: clear filters so the claim renders, then flash it.
+  useEffect(() => {
+    const onTrace = (e: Event) => {
+      const key = (e as CustomEvent<{ key?: string }>).detail?.key;
+      if (!key) return;
+      setQ("");
+      setSrc("all");
+      setFlashKey(key);
+    };
+    window.addEventListener(TRACE_CLAIM_EVENT, onTrace);
+    return () => window.removeEventListener(TRACE_CLAIM_EVENT, onTrace);
+  }, []);
+
+  useEffect(() => {
+    if (!flashKey) return;
+    const el = document.getElementById(`claim-${flashKey}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.remove("nav-flash");
+      void el.offsetWidth; // reflow so the highlight re-triggers
+      el.classList.add("nav-flash");
+    }
+    const t = window.setTimeout(() => setFlashKey(null), 1600);
+    return () => window.clearTimeout(t);
+  }, [flashKey]);
 
   const sources = useMemo(() => {
     const set = new Set<string>();
@@ -70,7 +98,11 @@ export default function Provenance({ facts }: { facts: Facts }) {
           </thead>
           <tbody>
             {shown.map((c) => (
-              <tr key={c.key} className="border-b border-edge/50 align-top">
+              <tr
+                key={c.key}
+                id={`claim-${c.key}`}
+                className={`border-b border-edge/50 align-top scroll-mt-28 transition-colors ${flashKey === c.key ? "bg-brand/10" : ""}`}
+              >
                 <td className="py-1.5 pr-3">
                   <div className="font-mono text-sub">{c.key}</div>
                   <div className="text-[11px] leading-snug text-muted">{c.note}</div>

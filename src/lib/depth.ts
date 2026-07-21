@@ -34,6 +34,32 @@ export function slippageAt(points: SlippagePoint[], notional: number): number {
   return last.slippage;
 }
 
+export interface SlipTrace {
+  below: SlippagePoint | null; // measured rung at/just below the size
+  above: SlippagePoint | null; // measured rung just above the size
+  slippage: number;
+  mode: "below-first" | "interp" | "above-last";
+}
+
+/** The workings behind `slippageAt`: the two measured rungs bracketing `notional` and the linear
+ * interpolation between them. Powers the "show the math" reveal — identical logic to slippageAt. */
+export function slippageTrace(points: SlippagePoint[], notional: number): SlipTrace {
+  const d = [...points].sort((a, b) => a.notional - b.notional);
+  if (d.length === 0) return { below: null, above: null, slippage: 1, mode: "below-first" };
+  if (notional <= d[0].notional) return { below: null, above: d[0], slippage: d[0].slippage, mode: "below-first" };
+  const last = d[d.length - 1];
+  if (notional >= last.notional) return { below: last, above: null, slippage: last.slippage, mode: "above-last" };
+  for (let i = 0; i < d.length - 1; i++) {
+    const a = d[i];
+    const b = d[i + 1];
+    if (notional >= a.notional && notional <= b.notional) {
+      const t = (notional - a.notional) / (b.notional - a.notional);
+      return { below: a, above: b, slippage: a.slippage + t * (b.slippage - a.slippage), mode: "interp" };
+    }
+  }
+  return { below: last, above: null, slippage: last.slippage, mode: "above-last" };
+}
+
 /**
  * Largest trade size a single pool (one `major_symbol` side) absorbs at ≤ budget.
  * Byte-for-byte port of `max_notional_at` in src/ictbot/stacks/depth.py: take the deepest
