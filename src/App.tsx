@@ -16,6 +16,7 @@ import { useToast } from "./components/ui/Toast";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
 import StickyHeader, { type NavSection } from "./components/StickyHeader";
 import SectionBand from "./components/SectionBand";
+import TradePlanPage from "./components/TradePlanPage";
 import CommandPalette from "./components/cockpit/CommandPalette";
 import KeyboardLayer from "./components/cockpit/KeyboardLayer";
 import Cheatsheet from "./components/cockpit/Cheatsheet";
@@ -58,7 +59,7 @@ const SECTIONS: NavSection[] = [
 export default function App() {
   const data = bakedData();
   const { summary, study, ladders } = data;
-  const { budget, setBudget, moveX, setMoveX, asset, setAsset, shareLink } = useScenario();
+  const { budget, setBudget, moveX, setMoveX, asset, setAsset, view, openPlan, closePlan, shareLink } = useScenario();
 
   const [liveEnabled, setLiveEnabled] = useState(true);
   const { live, refresh } = useLiveData(liveEnabled);
@@ -149,6 +150,26 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The Trade Plan page is a full-screen route (deep-linked via #v=plan) — render it instead of
+  // the dashboard when active. All hooks above run unconditionally; this switch is after them.
+  if (view === "plan") {
+    return (
+      <TradePlanPage
+        ladders={ladders}
+        budget={budget}
+        setBudget={setBudget}
+        moveX={moveX}
+        setMoveX={setMoveX}
+        asset={asset}
+        setAsset={setAsset}
+        onClose={closePlan}
+        planSummary={planSummary}
+        shareLink={shareLink}
+        onDownloadJson={downloadScenarioJson}
+      />
+    );
+  }
+
   return (
     <>
       <StickyHeader
@@ -166,7 +187,7 @@ export default function App() {
           copyLink,
           downloadCsv,
           planTrade: () => {
-            flashSection(sectionId("Trade planner"));
+            openPlan();
             window.dispatchEvent(new Event(FOCUS_PLANNER_EVENT));
           },
           comparePools: () => flashSection(sectionId("Pool compare")),
@@ -258,7 +279,7 @@ export default function App() {
               setMoveX={setMoveX}
               asset={asset}
               setAsset={setAsset}
-              planSummary={planSummary}
+              onOpenPlan={openPlan}
             />
           </Panel>
           <Panel label="Slippage explorer">
