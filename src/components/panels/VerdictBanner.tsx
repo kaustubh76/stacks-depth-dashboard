@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 
 import type { DepthLadder, Facts, Verdict } from "../../api/types";
-import { byAssetAtSlippage, recomputeVerdict } from "../../lib/depth";
+import { byAssetAtSlippage, recomputeVerdict, viableBudgetThreshold } from "../../lib/depth";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
 import { ChipButton } from "../ui/ChipButton";
@@ -31,11 +31,13 @@ export default function VerdictBanner({
   ladders,
   budget,
   facts,
+  setBudget,
 }: {
   verdict: Verdict;
   ladders: DepthLadder[];
   budget: number;
   facts: Facts;
+  setBudget: (b: number) => void;
 }) {
   const [whatIf, setWhatIf] = useState<WhatIf | null>(null);
 
@@ -73,6 +75,11 @@ export default function VerdictBanner({
   );
   const clearing = rankedAssets.filter(([, v]) => v >= bar);
   const nextBelow = rankedAssets.find(([, v]) => v < bar) ?? null;
+  // Independent of the current budget — scan once for the budget (if any ≤10%) that makes rotation viable.
+  const viableBudget = useMemo(
+    () => viableBudgetThreshold(ladders, { min_asset_depth_2pct_usd: bar, min_independent_assets: officialMinAssets }),
+    [ladders, bar, officialMinAssets],
+  );
 
   const setTarget = (t: number) =>
     setWhatIf({ target: Math.min(Math.max(t, TARGET_MIN), TARGET_MAX), minAssets });
@@ -155,6 +162,27 @@ export default function VerdictBanner({
                 </p>
               )}
               <p className="mt-2 text-muted">Drag the slippage budget and this recomputes live.</p>
+              <div className="mt-2 border-t border-edge/60 pt-2">
+                {viableBudget !== null ? (
+                  <span>
+                    Or loosen the budget: rotation would clear at{" "}
+                    <b className="text-ink">≤{pct(viableBudget, viableBudget < 0.01 ? 2 : 1)}</b> slippage.
+                    <button
+                      type="button"
+                      onClick={() => setBudget(viableBudget)}
+                      aria-label="Set the slippage budget to the level where rotation clears"
+                      className="ml-1.5 rounded-sm border border-edge px-1.5 py-px font-mono text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                    >
+                      set budget →
+                    </button>
+                  </span>
+                ) : (
+                  <span>
+                    Even at <b className="text-ink">≤10%</b> slippage, fewer than {officialMinAssets} assets clear the bar —
+                    Stacks is structurally too thin to rotate at any realistic budget.
+                  </span>
+                )}
+              </div>
             </>
           ) : (
             <p>No asset sits below the bar to solve for.</p>

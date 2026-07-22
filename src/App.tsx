@@ -239,7 +239,7 @@ export default function App() {
         {/* ── THE ANSWER ── the headline finding, stated once */}
         <div id={sectionId("Answer")} data-section-label="Answer" className="scroll-mt-28">
           <Panel label="Verdict">
-            <VerdictBanner verdict={study.verdict} ladders={ladders} budget={budget} facts={data.facts} />
+            <VerdictBanner verdict={study.verdict} ladders={ladders} budget={budget} facts={data.facts} setBudget={setBudget} />
           </Panel>
           <Panel label="Headline">
             <HeadlineTiles summary={summary} verdict={study.verdict} />

@@ -6,6 +6,7 @@ import { poolKey, slippageAt, slippageTrace, realizedForNotional } from "../../l
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import ReasoningReveal from "../ui/ReasoningReveal";
+import { downloadSvgAsPng } from "../../lib/svgPng";
 import { usd0, pct } from "../../lib/format";
 
 const PALETTE = ["#38b2c4", "#43b581", "#d9a23a", "#8b9dff", "#e0728a", "#3861fb", "#23c4d6", "#c2a633"];
@@ -128,6 +129,15 @@ export default function SlippageExplorer({
             className="rounded-sm border border-edge px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
           >
             {showAll ? `top 7` : `all ${ladders.length}`}
+          </button>
+          <button
+            type="button"
+            onClick={() => svgRef.current && downloadSvgAsPng(svgRef.current, "stacks-depth-curves.png")}
+            title="download the slippage chart as a PNG image"
+            aria-label="Download the slippage chart as PNG"
+            className="rounded-sm border border-edge px-2 py-0.5 font-mono text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+          >
+            ⬇ png
           </button>
         </span>
       }

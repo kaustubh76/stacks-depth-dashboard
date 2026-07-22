@@ -263,3 +263,22 @@ export function recomputeVerdict(
     rotationViable: tradeable.length >= thresholds.min_independent_assets,
   };
 }
+
+/**
+ * The smallest slippage budget (scanning step..cap) at which the rotation criterion is actually met
+ * — i.e. ≥ min_independent_assets clear the depth bar — or null if no budget up to `cap` gets there.
+ * Powers the "what would it take?" ecosystem answer. Independent of the current budget, so memoize
+ * on (ladders, thresholds) only.
+ */
+export function viableBudgetThreshold(
+  ladders: DepthLadder[],
+  thresholds: { min_asset_depth_2pct_usd: number; min_independent_assets: number },
+  cap = 0.1,
+  step = 0.0025,
+): number | null {
+  for (let b = step; b <= cap + 1e-9; b += step) {
+    const rounded = Math.round(b * 10000) / 10000;
+    if (recomputeVerdict(ladders, rounded, thresholds).rotationViable) return rounded;
+  }
+  return null;
+}
