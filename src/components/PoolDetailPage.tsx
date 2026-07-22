@@ -8,6 +8,7 @@ import { matchDrift, snapshotPools } from "../lib/live";
 import { flashSection, sectionId } from "../lib/sections";
 import { useTheme } from "../hooks/useTheme";
 import { usd0, pct } from "../lib/format";
+import { UP, DOWN, MUTED } from "../lib/colors";
 import CurveChart from "./ui/CurveChart";
 import { ChipButton } from "./ui/ChipButton";
 import CopyButton from "./ui/CopyButton";
@@ -151,7 +152,7 @@ export default function PoolDetailPage({
               {derived.liveLiq !== null ? <AnimatedNumber value={derived.liveLiq} format={usd0} duration={0.4} /> : "—"}
             </div>
             {derived.driftPct !== null && (
-              <div className="mt-0.5 font-mono text-[10px]" style={{ color: Math.abs(derived.driftPct) < 0.05 ? "#8a8f9c" : derived.driftPct >= 0 ? "#43b581" : "#e0728a" }}>
+              <div className="mt-0.5 font-mono text-[10px]" style={{ color: Math.abs(derived.driftPct) < 0.05 ? MUTED : derived.driftPct >= 0 ? UP : DOWN }}>
                 {derived.driftPct >= 0 ? "▲" : "▼"} {Math.abs(derived.driftPct).toFixed(2)}% vs snapshot
               </div>
             )}
@@ -165,7 +166,7 @@ export default function PoolDetailPage({
           <p className="mt-2 font-mono text-[11px] text-sub">
             at {usd0(moveX)} this pool charges{" "}
             {derived.feasibleAtSize ? (
-              <b style={{ color: derived.slipAtSize <= budget ? "#43b581" : "#e0728a" }}>{pct(derived.slipAtSize, 2)}</b>
+              <b style={{ color: derived.slipAtSize <= budget ? UP : DOWN }}>{pct(derived.slipAtSize, 2)}</b>
             ) : (
               <b className="text-muted">no fill</b>
             )}{" "}
@@ -191,7 +192,7 @@ export default function PoolDetailPage({
                   return (
                     <tr key={p.notional} className="border-b border-edge/50">
                       <td className="py-1.5 pr-3 font-mono tabular-nums text-sub">{usd0(p.notional)}</td>
-                      <td className="py-1.5 px-3 text-right font-mono tabular-nums" style={{ color: ok ? "#43b581" : "#e0728a" }}>
+                      <td className="py-1.5 px-3 text-right font-mono tabular-nums" style={{ color: ok ? UP : DOWN }}>
                         {pct(p.slippage, 2)}
                       </td>
                       <td className="py-1.5 pl-3">

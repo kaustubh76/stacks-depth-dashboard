@@ -30,7 +30,7 @@ export default function Masthead({ asOf }: { asOf: string }) {
         <StatusPill tone={stale ? "warn" : "up"} dot srText={`on-chain measurement ${measuredLabel(asOf)}`}>
           {measuredLabel(asOf)}
         </StatusPill>
-        <span className="opacity-80">
+        <span>
           {asOf} snapshot · re-harvests every 6h · chain is source of truth, vendor APIs cross-check
         </span>
       </div>

@@ -5,6 +5,7 @@ import { planTrade, realizedForNotional } from "../lib/depth";
 import { ASSETS, BUDGET_MIN, BUDGET_MAX, X_MIN, X_MAX } from "../hooks/useHashState";
 import { useTheme } from "../hooks/useTheme";
 import { usd0, pct } from "../lib/format";
+import { UP, DOWN, MUTED } from "../lib/colors";
 import { ChipButton } from "./ui/ChipButton";
 import CopyButton from "./ui/CopyButton";
 import StatusPill from "./ui/StatusPill";
@@ -219,7 +220,7 @@ export default function TradePlanPage({
               ))}
               {unfilled > 0.5 && (
                 <div
-                  className="flex items-center justify-center bg-edge text-[10px] text-muted"
+                  className="flex items-center justify-center bg-edge text-[10px] text-sub"
                   style={{ width: `${(unfilled / moveX) * 100}%` }}
                   title={`unfilled ${usd0(unfilled)}`}
                 >
@@ -246,7 +247,7 @@ export default function TradePlanPage({
                     </td>
                     <td className="py-1.5 px-3 font-mono text-muted">{leg.venue}</td>
                     <td className="py-1.5 px-3 text-right font-mono tabular-nums text-sub">{usd0(leg.notional)}</td>
-                    <td className="py-1.5 px-3 text-right font-mono tabular-nums" style={{ color: leg.slippage <= budget ? "#43b581" : "#e0728a" }}>
+                    <td className="py-1.5 px-3 text-right font-mono tabular-nums" style={{ color: leg.slippage <= budget ? UP : DOWN }}>
                       {pct(leg.slippage, 2)}
                     </td>
                     <td className="py-1.5 pl-3 text-right font-mono tabular-nums text-sub">{usd0(leg.notional * leg.slippage)}</td>
@@ -279,14 +280,14 @@ export default function TradePlanPage({
           </div>
           <div className="glow-card p-4">
             <div className="card-label">Expected slippage cost</div>
-            <div className="mt-1 font-display text-xl font-bold tabular-nums" style={{ color: "#e0728a" }}>
+            <div className="mt-1 font-display text-xl font-bold tabular-nums" style={{ color: DOWN }}>
               <AnimatedNumber value={costUsd} format={usd0} duration={0.4} />
             </div>
             <div className="mt-0.5 font-mono text-[10px] text-muted">{pct(blended, 2)} blended</div>
           </div>
           <div className="glow-card p-4">
             <div className="card-label">You keep ~</div>
-            <div className="mt-1 font-display text-xl font-bold tabular-nums" style={{ color: "#43b581" }}>
+            <div className="mt-1 font-display text-xl font-bold tabular-nums" style={{ color: UP }}>
               <AnimatedNumber value={keep} format={usd0} duration={0.4} />
             </div>
             <div className="mt-0.5 font-mono text-[10px] text-muted">after price impact</div>
@@ -313,7 +314,7 @@ export default function TradePlanPage({
                   <tr key={a.asset} className={`border-b border-edge/50 transition-colors hover:bg-panel2/40 ${a.asset === asset ? "bg-brand/5" : ""}`}>
                     <td className="py-1.5 pr-3 font-display font-bold text-ink">{a.asset}</td>
                     <td className="py-1.5 px-3 font-mono text-muted">{a.bestPoolSymbol}</td>
-                    <td className="py-1.5 px-3 text-right font-mono tabular-nums" style={{ color: !a.feasible ? "#8a8f9c" : a.slippage <= budget ? "#43b581" : "#e0728a" }}>
+                    <td className="py-1.5 px-3 text-right font-mono tabular-nums" style={{ color: !a.feasible ? MUTED : a.slippage <= budget ? UP : DOWN }}>
                       {a.feasible ? pct(a.slippage, 2) : "no fill"}
                     </td>
                     <td className="py-1.5 pl-3 text-right">

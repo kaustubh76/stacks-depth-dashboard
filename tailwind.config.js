@@ -17,16 +17,16 @@ export default {
 
         // ── Brand + signal (Stacks Depth palette; vivid on both themes) ──
         brand: "rgb(var(--c-brand) / <alpha-value>)", // Stacks Depth teal — themeable: bright on dark, darker on light for AA contrast
-        up: "#43b581", // depth / "clears the bar" green
-        down: "#e0728a", // shortfall / crit rose
+        up: "rgb(var(--c-up) / <alpha-value>)", // depth / "clears the bar" green (themeable for AA on light)
+        down: "rgb(var(--c-down) / <alpha-value>)", // shortfall / crit rose (themeable)
         cool: "#3861fb", // one cool secondary (measured-vs-modelled)
         violet: "#8b9dff", // provenance / on-chain
 
         // ── Legacy utility names kept ALIVE (re-pointed) so reused primitives resolve ──
-        neon: "#43b581", // → up
-        cyan: "#38b2c4", // → brand teal
-        amber: "#d9a23a", // → warn / attention gold
-        danger: "#e0728a", // → down
+        neon: "rgb(var(--c-up) / <alpha-value>)", // → up
+        cyan: "rgb(var(--c-brand) / <alpha-value>)", // → brand teal
+        amber: "rgb(var(--c-warn) / <alpha-value>)", // → warn / attention gold
+        danger: "rgb(var(--c-down) / <alpha-value>)", // → down
       },
       fontFamily: {
         display: ['"Space Grotesk"', "Inter", "ui-sans-serif", "system-ui", "-apple-system", '"Segoe UI"', "sans-serif"],

@@ -99,7 +99,7 @@ export default function RotationBacktest({ audit, budget }: { audit: Audit; budg
                   <td className="py-1.5 px-3 text-right font-mono tabular-nums text-sub">{pct(r.max_dd, 1)}</td>
                   <td className="py-1.5 pl-3 text-right font-mono tabular-nums text-sub">
                     {pct(r.pct_windows_up, 1)}{" "}
-                    <span className="text-muted opacity-70">({r.n_windows})</span>
+                    <span className="text-muted">({r.n_windows})</span>
                   </td>
                 </tr>
               );

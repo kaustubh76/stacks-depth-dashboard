@@ -24,6 +24,11 @@
   --c-sub: 197 200 208;
   --c-ink: 237 237 234;
   --c-brand: 56 178 196; /* #38b2c4 — bright teal reads well on the dark canvas */
+  --c-up: 67 181 129; /* #43b581 — depth/clears green */
+  --c-down: 224 114 138; /* #e0728a — shortfall rose */
+  --c-warn: 217 162 58; /* #d9a23a — attention gold */
+  --c-info: 56 97 251; /* #3861fb — cross-feed blue */
+  --c-neutral: 138 143 156; /* #8a8f9c — de-emphasized grey */
 }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -44,6 +49,11 @@
   --c-sub: 51 58 70;
   --c-ink: 21 22 26;
   --c-brand: 13 108 128; /* #0d6c80 — darker teal clears WCAG AA on the light canvas */
+  --c-up: 15 107 52; /* #0f6b34 — darker green clears AA on light */
+  --c-down: 176 38 74; /* #b0264a — darker rose clears AA on light */
+  --c-warn: 122 88 0; /* #7a5800 — darker gold clears AA on light */
+  --c-info: 37 64 192; /* #2540c0 — darker blue clears AA on light */
+  --c-neutral: 91 99 112; /* #5b6370 — darker grey clears AA on light */
 }
 
 html,

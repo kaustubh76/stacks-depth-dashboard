@@ -1,6 +1,7 @@
 import type { LiveState } from "../hooks/useLiveData";
 import { useNow } from "../hooks/useNow";
 import { usd, usd0, ago, int } from "../lib/format";
+import { UP, DOWN } from "../lib/colors";
 import StatusPill from "./ui/StatusPill";
 
 /** A thin always-on live ribbon so the very top of the page reads current, not frozen:
@@ -30,7 +31,7 @@ export default function LiveTicker({
         <span>
           STX <span className="text-sub">{usd(live.stx.usd, 4)}</span>
           {live.stx.change24h !== null && (
-            <span style={{ color: live.stx.change24h >= 0 ? "#43b581" : "#e0728a" }}> {live.stx.change24h >= 0 ? "▲" : "▼"}{Math.abs(live.stx.change24h).toFixed(1)}%</span>
+            <span style={{ color: live.stx.change24h >= 0 ? UP : DOWN }}> {live.stx.change24h >= 0 ? "▲" : "▼"}{Math.abs(live.stx.change24h).toFixed(1)}%</span>
           )}
         </span>
       )}
@@ -45,7 +46,7 @@ export default function LiveTicker({
         </span>
       )}
       <span className="ml-auto flex items-center gap-2">
-        <span className="opacity-70">{on ? `updated ${ago(live.updatedChain ?? live.updatedPrice, now)}` : "connecting…"}</span>
+        <span>{on ? `updated ${ago(live.updatedChain ?? live.updatedPrice, now)}` : "connecting…"}</span>
         {onRefresh && (
           <button
             type="button"

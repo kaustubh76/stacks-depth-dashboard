@@ -42,7 +42,7 @@ export default class ErrorBoundary extends Component<Props, State> {
           <span className="font-mono text-xs text-amber">
             {this.props.label ?? "panel"} hit a snag
           </span>
-          <span className="text-[10px] leading-snug text-muted opacity-70">
+          <span className="text-[10px] leading-snug text-muted">
             the rest of the dashboard is still live
           </span>
         </div>
