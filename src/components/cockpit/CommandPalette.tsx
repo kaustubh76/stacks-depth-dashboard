@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTheme } from "../../hooks/useTheme";
 import { OPEN_CHEATSHEET_EVENT, START_TOUR_EVENT } from "../../lib/cockpit";
 import { flashSection } from "../../lib/sections";
+import { trapTab } from "../../lib/focusTrap";
 import { useToast } from "../ui/Toast";
 
 export interface PaletteActions {
@@ -39,11 +40,14 @@ export default function CommandPalette({ actions }: { actions: PaletteActions })
   const [query, setQuery] = useState("");
   const [sel, setSel] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const restoreRef = useRef<HTMLElement | null>(null);
 
   const close = useCallback(() => {
     setOpen(false);
     setQuery("");
     setSel(0);
+    restoreRef.current?.focus?.(); // return focus to whatever opened the palette (WCAG 2.4.3)
   }, []);
 
   // Global open/close: ⌘K / Ctrl-K toggles; the header chip dispatches an event.
@@ -51,10 +55,16 @@ export default function CommandPalette({ actions }: { actions: PaletteActions })
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K")) {
         e.preventDefault();
-        setOpen((o) => !o);
+        setOpen((o) => {
+          if (!o) restoreRef.current = document.activeElement as HTMLElement | null;
+          return !o;
+        });
       }
     };
-    const onOpen = () => setOpen(true);
+    const onOpen = () => {
+      restoreRef.current = document.activeElement as HTMLElement | null;
+      setOpen(true);
+    };
     window.addEventListener("keydown", onKey);
     window.addEventListener(OPEN_PALETTE_EVENT, onOpen);
     return () => {
@@ -134,6 +144,8 @@ export default function CommandPalette({ actions }: { actions: PaletteActions })
     } else if (e.key === "Escape") {
       e.preventDefault();
       close();
+    } else {
+      trapTab(e, panelRef.current);
     }
   };
 
@@ -154,6 +166,7 @@ export default function CommandPalette({ actions }: { actions: PaletteActions })
           aria-label="Command palette"
         >
           <motion.div
+            ref={panelRef}
             className="glow-card w-full max-w-[560px] overflow-hidden p-0"
             initial={reduce ? false : { opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}

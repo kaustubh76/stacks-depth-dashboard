@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { bakedData } from "./api/data";
 import { useScenario } from "./hooks/useHashState";
@@ -14,6 +14,7 @@ import PoolCompare from "./components/panels/PoolCompare";
 import { ChipButton } from "./components/ui/ChipButton";
 import { useToast } from "./components/ui/Toast";
 import ErrorBoundary from "./components/ui/ErrorBoundary";
+import SkipLink from "./components/ui/SkipLink";
 import StickyHeader, { type NavSection } from "./components/StickyHeader";
 import SectionBand from "./components/SectionBand";
 import LiveTicker from "./components/LiveTicker";
@@ -164,47 +165,83 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // A11y (WCAG 2.4.3): on a top-level route change (dashboard ↔ plan ↔ pool, incl. browser
+  // back/forward), move focus to the new view's <main> so keyboard/SR users aren't stranded on a
+  // now-unmounted control. Skips the initial mount so it never steals focus on load.
+  const routedOnce = useRef(false);
+  useEffect(() => {
+    if (!routedOnce.current) {
+      routedOnce.current = true;
+      return;
+    }
+    const raf = requestAnimationFrame(() => document.getElementById("main")?.focus());
+    return () => cancelAnimationFrame(raf);
+  }, [view, pool]);
+
+  // A shared escapable fallback for the full-page routes: if a page render throws (e.g. a malformed
+  // deep-linked pool), the user gets a "back to dashboard" escape instead of an unrecoverable reload.
+  const pageErrorFallback = (
+    <div className="flex min-h-screen flex-col items-center justify-center gap-3 p-6 text-center">
+      <div className="font-display text-xl font-bold text-ink">This page hit a snag</div>
+      <p className="max-w-sm font-mono text-[12px] text-muted">
+        Something went wrong rendering this view — the dashboard is fine.
+      </p>
+      <button
+        type="button"
+        onClick={goDashboard}
+        className="rounded-sm border-3 border-[color:var(--thick-line)] bg-brand/10 px-4 py-2 font-display text-sm font-bold uppercase tracking-wide text-brand shadow-brut-sm transition hover:-translate-y-0.5 hover:bg-brand/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+      >
+        ← Back to dashboard
+      </button>
+    </div>
+  );
+
   // The Trade Plan page is a full-screen route (deep-linked via #v=plan) — render it instead of
   // the dashboard when active. All hooks above run unconditionally; this switch is after them.
   if (view === "plan") {
     return (
-      <TradePlanPage
-        ladders={ladders}
-        budget={budget}
-        setBudget={setBudget}
-        moveX={moveX}
-        setMoveX={setMoveX}
-        asset={asset}
-        setAsset={setAsset}
-        onClose={closePlan}
-        planSummary={planSummary}
-        shareLink={shareLink}
-        onDownloadJson={downloadScenarioJson}
-        asOf={summary.as_of_date}
-      />
+      <ErrorBoundary label="Trade plan" fallback={pageErrorFallback}>
+        <TradePlanPage
+          ladders={ladders}
+          budget={budget}
+          setBudget={setBudget}
+          moveX={moveX}
+          setMoveX={setMoveX}
+          asset={asset}
+          setAsset={setAsset}
+          onClose={closePlan}
+          planSummary={planSummary}
+          shareLink={shareLink}
+          onDownloadJson={downloadScenarioJson}
+          asOf={summary.as_of_date}
+        />
+      </ErrorBoundary>
     );
   }
 
   if (view === "pool" && pool) {
     return (
-      <PoolDetailPage
-        ladders={ladders}
-        live={live}
-        budget={budget}
-        moveX={moveX}
-        setAsset={setAsset}
-        poolKeyStr={pool}
-        selection={selection}
-        onOpenPlan={openPlan}
-        onClose={goDashboard}
-        shareLink={shareLink}
-        asOf={summary.as_of_date}
-      />
+      <ErrorBoundary label="Pool detail" fallback={pageErrorFallback}>
+        <PoolDetailPage
+          ladders={ladders}
+          live={live}
+          budget={budget}
+          moveX={moveX}
+          setAsset={setAsset}
+          poolKeyStr={pool}
+          selection={selection}
+          onOpenPlan={openPlan}
+          onClose={goDashboard}
+          shareLink={shareLink}
+          asOf={summary.as_of_date}
+        />
+      </ErrorBoundary>
     );
   }
 
   return (
     <>
+      <SkipLink />
       <StickyHeader
         movableText={usd0(study.verdict.movable_at_2pct_usd)}
         live={live.anyLive}
@@ -230,7 +267,7 @@ export default function App() {
       <Cheatsheet />
       <Tour />
 
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-6 outline-none sm:px-6 sm:py-8">
         <Masthead asOf={summary.as_of_date} />
 
         {/* Live ribbon — the top of the page reads current, not frozen */}
@@ -383,7 +420,7 @@ export default function App() {
         </SectionBand>
 
         <Footer summary={summary} />
-      </div>
+      </main>
     </>
   );
 }

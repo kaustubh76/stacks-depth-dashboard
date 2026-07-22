@@ -56,22 +56,25 @@ export default function SectionBand({
 
   return (
     <section id={id} data-section-label={title} data-band-id={id} className="mb-6 scroll-mt-28">
-      <button
-        type="button"
-        onClick={toggle}
-        aria-expanded={open}
-        className="group mb-3 flex w-full items-center gap-3 text-left focus:outline-none"
-      >
-        <span className="font-display text-sm font-bold uppercase tracking-[0.16em] text-ink transition-colors group-hover:text-brand">
-          {title}
-        </span>
-        {summary && <span className="hidden font-mono text-[11px] text-muted sm:inline">{summary}</span>}
-        <span className="h-px flex-1 bg-edge" />
-        <span className="font-mono text-[11px] text-muted transition-colors group-hover:text-brand" aria-hidden>
-          {open ? "collapse ▾" : "expand ▸"}
-        </span>
-      </button>
-      <div className={open ? "flex flex-col gap-4" : "hidden"}>{children}</div>
+      <h2 className="m-0 mb-3">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={open}
+          aria-controls={`${id}-content`}
+          className="group flex w-full items-center gap-3 text-left focus:outline-none"
+        >
+          <span className="font-display text-sm font-bold uppercase tracking-[0.16em] text-ink transition-colors group-hover:text-brand">
+            {title}
+          </span>
+          {summary && <span className="hidden font-mono text-[11px] text-muted sm:inline">{summary}</span>}
+          <span className="h-px flex-1 bg-edge" />
+          <span className="font-mono text-[11px] text-muted transition-colors group-hover:text-brand" aria-hidden>
+            {open ? "collapse ▾" : "expand ▸"}
+          </span>
+        </button>
+      </h2>
+      <div id={`${id}-content`} className={open ? "flex flex-col gap-4" : "hidden"}>{children}</div>
     </section>
   );
 }

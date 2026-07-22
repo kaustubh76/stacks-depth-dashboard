@@ -36,6 +36,18 @@ jobs:
           HIRO_API_KEY: ${{ secrets.HIRO_API_KEY }}
         run: PYTHONPATH=harvest python harvest/regenerate.py
 
+      # Gate: the committed TS compute suite must reproduce the freshly-harvested numbers before we
+      # ship them. If depth.ts can't reproduce study.json (a broken harvest or a math regression),
+      # this fails BEFORE the commit/push, so Render never deploys wrong figures.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verify compute reproduces the fresh data
+        run: |
+          npm install
+          npm test
+
       - name: Commit refreshed data (if changed)
         run: |
           git config user.name "stacks-depth-bot"

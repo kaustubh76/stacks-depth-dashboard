@@ -52,7 +52,7 @@ export default function StickyHeader({
   }, [sections]);
 
   return (
-    <div className="sticky top-0 z-40 w-full border-b-3 border-[color:var(--thick-line)] bg-panel/95 backdrop-blur">
+    <header className="sticky top-0 z-40 w-full border-b-3 border-[color:var(--thick-line)] bg-panel/95 backdrop-blur">
       <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2">
         <button
           type="button"
@@ -64,7 +64,7 @@ export default function StickyHeader({
         <span className="hidden font-mono text-[12px] text-sub lg:inline">
           <b className="text-brand">{movableText}</b> movable @≤2%
         </span>
-        <nav className="flex items-center gap-1 overflow-x-auto">
+        <nav aria-label="Sections" className="flex items-center gap-1 overflow-x-auto">
           {sections.map((s) => {
             const on = active === s.label;
             return (
@@ -112,6 +112,6 @@ export default function StickyHeader({
           </button>
         </div>
       </div>
-    </div>
+    </header>
   );
 }

@@ -1,0 +1,28 @@
+name: ci
+
+# Gate for human commits: typecheck + the compute reproducibility suite on every push to main and
+# every PR. depth.test.ts asserts the TS compute core still reproduces the committed study.json —
+# so a math regression can't land silently.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Install
+        run: npm install
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Test (compute reproducibility)
+        run: npm test

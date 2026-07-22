@@ -9,6 +9,7 @@ import { ChipButton } from "./ui/ChipButton";
 import CopyButton from "./ui/CopyButton";
 import StatusPill from "./ui/StatusPill";
 import AnimatedNumber from "./ui/AnimatedNumber";
+import SkipLink from "./ui/SkipLink";
 
 const BUDGET_PRESETS = [0.005, 0.01, 0.02, 0.05];
 const QUICK = [1000, 10000, 25000, 50000, 100000];
@@ -80,6 +81,7 @@ export default function TradePlanPage({
 
   return (
     <div className="min-h-screen">
+      <SkipLink />
       {/* Top bar */}
       <div className="sticky top-0 z-40 w-full border-b-3 border-[color:var(--thick-line)] bg-panel/95 backdrop-blur">
         <div className="mx-auto flex max-w-4xl items-center gap-3 px-4 py-2">
@@ -113,7 +115,7 @@ export default function TradePlanPage({
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-4xl px-4 py-8 outline-none sm:px-6">
         {/* Scenario header */}
         <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">Trade plan</div>
         <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
@@ -338,7 +340,7 @@ export default function TradePlanPage({
           </button>
           <span className="font-mono text-[11px] text-muted">plan is deep-linked — copy the share link to send it</span>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

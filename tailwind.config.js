@@ -16,7 +16,7 @@ export default {
         ink: "rgb(var(--c-ink) / <alpha-value>)",
 
         // ── Brand + signal (Stacks Depth palette; vivid on both themes) ──
-        brand: "#38b2c4", // Stacks Depth teal — primary / headline accent
+        brand: "rgb(var(--c-brand) / <alpha-value>)", // Stacks Depth teal — themeable: bright on dark, darker on light for AA contrast
         up: "#43b581", // depth / "clears the bar" green
         down: "#e0728a", // shortfall / crit rose
         cool: "#3861fb", // one cool secondary (measured-vs-modelled)

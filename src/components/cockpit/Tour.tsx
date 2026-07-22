@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { START_TOUR_EVENT, TOUR_STEPS } from "../../lib/cockpit";
 import { sectionId } from "../../lib/sections";
+import { trapTab } from "../../lib/focusTrap";
 
 interface Step {
   label: string;
@@ -28,6 +29,7 @@ export default function Tour() {
   const [rect, setRect] = useState<DOMRect | null>(null);
   const open = steps.length > 0;
   const nextRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -133,10 +135,12 @@ export default function Tour() {
       )}
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label={`Tour: ${step.label}`}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => trapTab(e, dialogRef.current)}
         className="glow-card fixed bottom-6 left-1/2 w-[min(92vw,460px)] -translate-x-1/2 p-4"
       >
         <div className="mb-1 flex items-center justify-between gap-3">

@@ -23,6 +23,7 @@
   --c-muted: 138 143 156;
   --c-sub: 197 200 208;
   --c-ink: 237 237 234;
+  --c-brand: 56 178 196; /* #38b2c4 — bright teal reads well on the dark canvas */
 }
 :root[data-theme="light"] {
   color-scheme: light;
@@ -42,6 +43,7 @@
   --c-muted: 91 99 112;
   --c-sub: 51 58 70;
   --c-ink: 21 22 26;
+  --c-brand: 13 108 128; /* #0d6c80 — darker teal clears WCAG AA on the light canvas */
 }
 
 html,

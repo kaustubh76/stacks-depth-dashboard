@@ -11,6 +11,7 @@ import { usd0, pct } from "../lib/format";
 import CurveChart from "./ui/CurveChart";
 import { ChipButton } from "./ui/ChipButton";
 import CopyButton from "./ui/CopyButton";
+import SkipLink from "./ui/SkipLink";
 import StatusPill from "./ui/StatusPill";
 import AnimatedNumber from "./ui/AnimatedNumber";
 
@@ -95,8 +96,9 @@ export default function PoolDetailPage({
   if (!ladder || !derived) {
     return (
       <div className="min-h-screen">
+        <SkipLink />
         {Bar}
-        <div className="mx-auto max-w-4xl px-4 py-16 text-center">
+        <main id="main" tabIndex={-1} className="mx-auto max-w-4xl px-4 py-16 text-center outline-none">
           <div className="font-display text-2xl font-bold text-ink">Pool not found</div>
           <p className="mt-2 font-mono text-[12px] text-muted">This pool key isn't in the snapshot.</p>
           <button
@@ -106,7 +108,7 @@ export default function PoolDetailPage({
           >
             ← Back to dashboard
           </button>
-        </div>
+        </main>
       </div>
     );
   }
@@ -115,8 +117,9 @@ export default function PoolDetailPage({
 
   return (
     <div className="min-h-screen">
+      <SkipLink />
       {Bar}
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-4xl px-4 py-8 outline-none sm:px-6">
         {/* Header */}
         <div className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-brand">
           {ladder.venue} pool · {asset}
@@ -237,7 +240,7 @@ export default function PoolDetailPage({
           </ChipButton>
           <span className="ml-auto font-mono text-[11px] text-muted">deep-linked — copy the share link</span>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 
 import { NAV_KEYS, OPEN_CHEATSHEET_EVENT, POWER_KEYS } from "../../lib/cockpit";
 import { sectionId } from "../../lib/sections";
+import { trapTab } from "../../lib/focusTrap";
 
 function Kbd({ children }: { children: ReactNode }) {
   return <kbd className="mc-kbd">{children}</kbd>;
@@ -86,7 +87,9 @@ export default function Cheatsheet() {
               if (e.key === "Escape") {
                 e.preventDefault();
                 close();
+                return;
               }
+              trapTab(e, panelRef.current);
             }}
           >
             <header className="flex items-center justify-between border-b border-edge px-4 py-3">

@@ -116,7 +116,7 @@ export function thresholdStats(ladders: DepthLadder[], budget: number): {
     if (n > 0) poolsWithDepth += 1;
     if (n > deepestUsd) {
       deepestUsd = n;
-      deepestPool = `${l.venue}:${l.pool_id}`;
+      deepestPool = l.pool_id; // raw pool_id — matches study.json's deepest_pool (pool_id is already venue-scoped)
     }
   }
   return { total, deepestUsd, deepestPool, poolsWithDepth };
@@ -151,7 +151,7 @@ export function realizedForNotional(ladders: DepthLadder[], notional: number): A
     if (best) {
       rows.push({
         asset,
-        bestPool: `${best.pool.venue}:${best.pool.pool_id}`,
+        bestPool: best.pool.pool_id,
         bestPoolSymbol: best.pool.symbol,
         slippage: best.slip,
         feasible: notional <= best.pool.points[best.pool.points.length - 1].notional,

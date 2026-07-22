@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from "react";
 
 import type { DepthLadder } from "../../api/types";
 import { poolKey, slippageAt, slippageTrace, realizedForNotional } from "../../lib/depth";
+import { X_MIN, X_MAX } from "../../hooks/useHashState";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import ReasoningReveal from "../ui/ReasoningReveal";
@@ -159,10 +160,29 @@ export default function SlippageExplorer({
             ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
             width="100%"
-            className="block min-w-[460px] touch-none select-none"
-            role="img"
-            aria-label="interactive slippage curves — drag to set trade size"
+            className="block min-w-[460px] touch-none select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            role="slider"
+            tabIndex={0}
+            aria-label="Trade size — drag, or focus and use arrow keys"
+            aria-valuemin={X_MIN}
+            aria-valuemax={X_MAX}
+            aria-valuenow={moveX}
+            aria-valuetext={`${usd0(moveX)} trade size`}
             style={{ cursor: "ew-resize" }}
+            onKeyDown={(e) => {
+              const cur = (Math.log10(moveX) - 2) / 3; // position on the log-$ scale (0..1)
+              let next = cur;
+              if (e.key === "ArrowRight" || e.key === "ArrowUp") next = cur + 0.02;
+              else if (e.key === "ArrowLeft" || e.key === "ArrowDown") next = cur - 0.02;
+              else if (e.key === "PageUp") next = cur + 0.1;
+              else if (e.key === "PageDown") next = cur - 0.1;
+              else if (e.key === "Home") next = 0;
+              else if (e.key === "End") next = 1;
+              else return;
+              e.preventDefault();
+              setTouched(true);
+              setMoveX(nOfFrac(next));
+            }}
             onPointerDown={(e) => {
               (e.target as Element).setPointerCapture?.(e.pointerId);
               setDragging(true);
