@@ -1,42 +1,42 @@
 {
-  "as_of_date": "2026-07-22",
-  "as_of_ts": 1784747675,
+  "as_of_date": "2026-07-23",
+  "as_of_ts": 1784773261,
   "dead_fraction": 0.4455,
-  "digest": "a7b189a3b2bd4913e4e3893a25a0bcda8314e0168352e0c114bf8130e7ae8d71",
-  "elapsed_s": 68.6,
+  "digest": "cf875ce08a3d108214d75cf58d74e8c22e9d89f50c330948bd7a10dbe8e1dd24",
+  "elapsed_s": 75.8,
   "flagged_pools": [
     {
-      "note": "turnover 233x/day \u2014 likely endpoint inconsistency",
+      "note": "turnover 232x/day \u2014 likely endpoint inconsistency",
       "pool_id": "alex:104",
       "symbol": "bridged-btc-bridged-usdt",
-      "volume_24h_usd": 14668666.405760152
+      "volume_24h_usd": 14647876.823043479
     }
   ],
   "hiro_stats": {
     "errors": 0,
     "last_status": 200,
     "rate_stalls": 0,
-    "rate_wait_total_s": 6959.83,
-    "requests": 479,
+    "rate_wait_total_s": 6963.91,
+    "requests": 483,
     "retries": 0
   },
   "pools_dead": 188,
-  "pools_live": 89,
+  "pools_live": 82,
   "pools_total": 422,
   "price_disagreements": [],
-  "tvl_usd_total": 1518294.351501924,
+  "tvl_usd_total": 1515916.4110741455,
   "venues": {
     "alex": {
       "api_disagreements": 0,
       "dead": 136,
-      "dormant": 5,
+      "dormant": 3,
       "error": 0,
-      "live": 27,
+      "live": 29,
       "pools": 168,
       "swaps_24h": 0,
-      "tvl_usd": 565209.3294289156,
-      "volume_24h_usd": 14683865.642504195,
-      "volume_24h_usd_dex": 6511.43
+      "tvl_usd": 569497.2229631826,
+      "volume_24h_usd": 14662867.33141693,
+      "volume_24h_usd_dex": 4717.92
     },
     "bitflow": {
       "api_disagreements": 0,
@@ -45,26 +45,26 @@
       "error": 0,
       "live": 50,
       "pools": 53,
-      "swaps_24h": 79,
-      "tvl_usd": 676861.3423413041,
-      "volume_24h_usd": 2119.01,
-      "volume_24h_usd_dex": 2119.01
+      "swaps_24h": 88,
+      "tvl_usd": 670215.6035345161,
+      "volume_24h_usd": 4061.5299999999997,
+      "volume_24h_usd_dex": 4061.5299999999997
     },
     "velar": {
       "api_disagreements": 0,
       "dead": 49,
-      "dormant": 140,
+      "dormant": 149,
       "error": 0,
-      "live": 12,
+      "live": 3,
       "pools": 201,
       "swaps_24h": 0,
-      "tvl_usd": 276223.679731704,
-      "volume_24h_usd": 338.36801742199725,
-      "volume_24h_usd_dex": 1117.65
+      "tvl_usd": 276203.5845764465,
+      "volume_24h_usd": 200.6707016031714,
+      "volume_24h_usd_dex": 1695.74
     }
   },
-  "volume_24h_usd_clean": 17656.614761464298,
-  "volume_24h_usd_dex_total": 9748.09,
-  "volume_24h_usd_flagged": 14668666.405760152,
-  "volume_24h_usd_total": 14686323.020521617
+  "volume_24h_usd_clean": 19252.709075054154,
+  "volume_24h_usd_dex_total": 10475.19,
+  "volume_24h_usd_flagged": 14647876.823043479,
+  "volume_24h_usd_total": 14667129.532118533
 }
