@@ -3,7 +3,7 @@ import { useTheme } from "../../hooks/useTheme";
 import { daysSince, measuredLabel } from "../../lib/format";
 
 /** Title band + freshness pill + theme toggle. */
-export default function Masthead({ asOf }: { asOf: string }) {
+export default function Masthead({ asOf, served }: { asOf: string; served?: boolean }) {
   const { theme, toggle } = useTheme();
   const stale = daysSince(asOf) > 2;
   return (
@@ -30,6 +30,11 @@ export default function Masthead({ asOf }: { asOf: string }) {
         <StatusPill tone={stale ? "warn" : "up"} dot srText={`on-chain measurement ${measuredLabel(asOf)}`}>
           {measuredLabel(asOf)}
         </StatusPill>
+        {served && (
+          <StatusPill tone="brand" dot pulse srText="dataset served live from the Stacks Depth API">
+            live api
+          </StatusPill>
+        )}
         <span>
           {asOf} snapshot · re-harvests every 6h · chain is source of truth, vendor APIs cross-check
         </span>

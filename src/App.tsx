@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { bakedData } from "./api/data";
+import { bakedData, fetchLive } from "./api/data";
+import type { StacksData } from "./api/types";
 import { useScenario } from "./hooks/useHashState";
 import { useLiveData } from "./hooks/useLiveData";
 import { flashSection, sectionId } from "./lib/sections";
@@ -62,7 +63,7 @@ const SECTIONS: NavSection[] = [
 ];
 
 export default function App() {
-  const data = bakedData();
+  const [data, setData] = useState<StacksData>(() => bakedData());
   const { summary, study, ladders } = data;
   const { budget, setBudget, moveX, setMoveX, asset, setAsset, view, pool, openPlan, openPool, closePlan, goDashboard, shareLink } = useScenario();
 
@@ -70,6 +71,31 @@ export default function App() {
   const { live, refresh } = useLiveData(liveEnabled);
   const selection = usePoolSelection();
   const { toast } = useToast();
+
+  // Real live client: fetch the current dataset from the API on mount + every 5 min, swapping the
+  // baked snapshot for the live one. Graceful — if the API is down, fetchLive returns null and the
+  // baked data stands, so the dashboard never blanks (and existing sessions pick up a fresh harvest
+  // without waiting for a frontend redeploy).
+  useEffect(() => {
+    let alive = true;
+    let ctrl: AbortController | null = null;
+    const load = () => {
+      ctrl?.abort();
+      ctrl = new AbortController();
+      fetchLive(ctrl.signal)
+        .then((live) => {
+          if (alive && live) setData(live);
+        })
+        .catch(() => {});
+    };
+    load();
+    const id = window.setInterval(load, 5 * 60 * 1000);
+    return () => {
+      alive = false;
+      ctrl?.abort();
+      window.clearInterval(id);
+    };
+  }, []);
 
   const copyLink = useCallback(() => {
     try {
@@ -268,7 +294,7 @@ export default function App() {
       <Tour />
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-6 outline-none sm:px-6 sm:py-8">
-        <Masthead asOf={summary.as_of_date} />
+        <Masthead asOf={summary.as_of_date} served={data.live} />
 
         {/* Live ribbon — the top of the page reads current, not frozen */}
         <LiveTicker live={live} onRefresh={refresh} onCopyLink={copyLink} />

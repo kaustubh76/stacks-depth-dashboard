@@ -23,21 +23,36 @@ export function bakedData(): StacksData {
   return BAKED;
 }
 
-/** Try a live backend; resolve to its payload (marked live) or null if none answers. */
+/** The live API base. A real backend (server/main.py, deployed as a Render web service) serves the
+ * committed snapshot at ${API_BASE}/api/stacks/*, so the dashboard is a live CLIENT of a running
+ * service rather than a baked static file. Overridable at build time via VITE_API_BASE. */
+const API_BASE = (import.meta.env.VITE_API_BASE || "https://stacks-depth-api.onrender.com").replace(/\/$/, "");
+
+/** Fetch the current dataset from the live API; resolve to its payload (marked live) or null if the
+ * API doesn't answer — in which case the baked snapshot stands, so the site never blanks. Also takes
+ * the per-pool ladders live from /api/stacks/depth when available (so the curves are live too). */
 export async function fetchLive(signal?: AbortSignal): Promise<StacksData | null> {
   try {
-    const r = await fetch("/api/stacks/dashboard", { headers: { accept: "application/json" }, signal });
-    if (!r.ok) return null;
-    const d = (await r.json()) as Partial<Dashboard>;
+    const [dashRes, depthRes] = await Promise.all([
+      fetch(`${API_BASE}/api/stacks/dashboard`, { headers: { accept: "application/json" }, signal }),
+      fetch(`${API_BASE}/api/stacks/depth`, { headers: { accept: "application/json" }, signal }).catch(() => null),
+    ]);
+    if (!dashRes.ok) return null;
+    const d = (await dashRes.json()) as Partial<Dashboard>;
     if (!d || !d.summary || !d.study) return null;
+    let ladders = BAKED.ladders; // per-pool ladders fall back to the baked derivation
+    if (depthRes && depthRes.ok) {
+      const dl = (await depthRes.json()) as DepthLadder[];
+      if (Array.isArray(dl) && dl.length > 0) ladders = dl;
+    }
     return {
       summary: d.summary as Summary,
       study: d.study as Study,
       facts: (d.facts as Facts) ?? BAKED.facts,
-      ladders: BAKED.ladders, // per-pool ladders are only in the baked derivation
+      ladders,
       live: true,
     };
   } catch {
-    return null; // static host / offline / CORS — baked data stands
+    return null; // offline / CORS / API down — baked data stands
   }
 }
