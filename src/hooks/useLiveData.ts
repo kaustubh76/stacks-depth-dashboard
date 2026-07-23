@@ -126,14 +126,26 @@ export function useLiveData(enabled: boolean): { live: LiveState; refresh: () =>
           const liq = p.liquidity as { usd?: unknown } | undefined;
           const vol = p.volume as { h24?: unknown } | undefined;
           const pu = typeof p.priceUsd === "string" ? parseFloat(p.priceUsd) : (p.priceUsd as number | undefined);
+          const base = typeof bt?.symbol === "string" ? bt.symbol : "";
+          const quote = typeof qt?.symbol === "string" ? qt.symbol : "";
+          const rawUrl = typeof p.url === "string" ? p.url : "";
+          // DexScreener's Stacks pool pages resolve ONLY for hex pair addresses; the contract-principal
+          // urls it returns for bitflow + most velar pools 404 (the page simply doesn't exist). Keep the
+          // direct link when it's a hex pair; otherwise fall back to a Stacks search for the pool's
+          // tokens, which always resolves — so the "dex↗" link is never dead.
+          const url = /\/0x[0-9a-fA-F]+$/.test(rawUrl)
+            ? rawUrl
+            : base && quote
+              ? `https://dexscreener.com/stacks?q=${encodeURIComponent(`${base} ${quote}`)}`
+              : rawUrl || null;
           return {
             venue: typeof p.dexId === "string" ? p.dexId : "",
-            base: typeof bt?.symbol === "string" ? bt.symbol : "",
-            quote: typeof qt?.symbol === "string" ? qt.symbol : "",
+            base,
+            quote,
             liqUsd: num(liq?.usd),
             vol24: num(vol?.h24),
             priceUsd: num(pu),
-            url: typeof p.url === "string" ? p.url : null,
+            url,
           };
         });
         patch({

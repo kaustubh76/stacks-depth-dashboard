@@ -8,11 +8,12 @@ import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
 import { usd0, usdCompact, ago } from "../../lib/format";
+import { UP, DOWN, MUTED } from "../../lib/colors";
 
 function Drift({ pctVal }: { pctVal: number | null }) {
   if (pctVal === null || !Number.isFinite(pctVal)) return <span className="text-muted">—</span>;
   const flat = Math.abs(pctVal) < 0.05;
-  const color = flat ? "#8a8f9c" : pctVal >= 0 ? "#43b581" : "#e0728a";
+  const color = flat ? MUTED : pctVal >= 0 ? UP : DOWN;
   const arrow = flat ? "→" : pctVal >= 0 ? "▲" : "▼";
   return (
     <span className="font-mono tabular-nums" style={{ color }}>
