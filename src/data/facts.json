@@ -1,6 +1,6 @@
 {
-  "as_of_date": "2026-07-23",
-  "as_of_ts": 1784834222,
+  "as_of_date": "2026-07-24",
+  "as_of_ts": 1784859426,
   "claims": [
     {
       "key": "alex_pools_total",
@@ -54,43 +54,43 @@
       "key": "tvl_total_usd",
       "note": "",
       "source": "on-chain reserves \u00d7 mean(feed) price",
-      "value": 1499592
+      "value": 1482354
     },
     {
       "key": "volume_24h_usd_reported",
       "note": "",
       "source": "ALEX /v1/allswaps (honest USD)",
-      "value": 14597340
+      "value": 15800557
     },
     {
       "key": "volume_24h_usd_flagged",
       "note": "ALEX bridged-btc/bridged-usdt endpoint inconsistency",
       "source": "one pool, 465\u00d7 turnover",
-      "value": 14580102
+      "value": 15785777
     },
     {
       "key": "volume_24h_usd_clean",
       "note": "ENTIRE tradeable ecosystem ex-flagged",
       "source": "ALEX /v1/allswaps",
-      "value": 17239
+      "value": 14780
     },
     {
       "key": "top_alex_pair_volume_usd",
       "note": "corrects Degrants.md '$75k' (raw token count) \u2014 STX-alex",
       "source": "ALEX /v1/allswaps baseVolume \u00d7 price",
-      "value": 12258
+      "value": 9166
     },
     {
       "key": "depth_movable_at_2pct_usd",
       "note": "can move at \u22642% slippage, total",
       "source": "on-chain AMM quotes (get-dy/get-helper/get-y)",
-      "value": 90346
+      "value": 89966
     },
     {
       "key": "depth_deepest_pool_2pct_usd",
       "note": "deepest single venue",
       "source": "on-chain AMM quotes",
-      "value": 51481
+      "value": 51314
     },
     {
       "key": "tradeable_assets_at_2pct",
@@ -108,7 +108,7 @@
       "key": "btc_price_disagreement_pct",
       "note": "cross-feed disagreement on BTC",
       "source": "Velar vs ALEX price feeds",
-      "value": 5.3
+      "value": 4.1
     },
     {
       "key": "depth_index_pools_measured",
@@ -120,25 +120,25 @@
       "key": "bitflow_swaps_24h",
       "note": "24h swap count across live Bitflow pools (activity signal; USD needs event attribution)",
       "source": "Hiro tx index",
-      "value": 80
+      "value": 120
     },
     {
       "key": "bitflow_volume_24h_usd",
       "note": "real Bitflow USD volume \u2014 DexScreener indexed the swap events Bitflow's missing API hides",
       "source": "DexScreener (free aggregator)",
-      "value": 4414
+      "value": 4773
     },
     {
       "key": "dexscreener_volume_24h_usd_total",
       "note": "independent 24h volume across all 3 venues (Bitflow by pool-contract; ALEX/Velar by dex+token-pair) \u2014 no double-count; cross-checks our clean figure",
       "source": "DexScreener (free, keyless; 3rd feed)",
-      "value": 10617
+      "value": 12353
     },
     {
       "key": "backtest_total_return_at_2pct",
       "note": "momentum rotation total return % at 2% one-way friction \u2014 no edge (corroborates depth)",
       "source": "engine.portfolio_replay on STX+BTC daily",
-      "value": -57.0
+      "value": -49.6
     },
     {
       "key": "hiro_keyless_rate_limit_rpm",
@@ -147,5 +147,5 @@
       "value": 37
     }
   ],
-  "dataset_digest": "2c7aaa3e23214de3be86215e8f396ba9df34d0fe9370b7330e9a05d8efcdda51"
+  "dataset_digest": "1253fdbba9a1bf10a5d557ba18ebb3c44076ebccbc3b956087fdd38c681bbcd0"
 }
