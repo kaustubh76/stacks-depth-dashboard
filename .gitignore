@@ -3,6 +3,10 @@ dist/
 .DS_Store
 *.local
 
+# python bytecode (server + harvest)
+__pycache__/
+*.pyc
+
 # harvest pipeline scratch (only the regenerated src/data/*.json is committed)
 harvest/_scratch/
 harvest/data/

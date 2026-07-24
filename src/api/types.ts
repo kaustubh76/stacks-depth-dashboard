@@ -163,15 +163,31 @@ export interface DepthLadder {
   points: SlippagePoint[];
 }
 
+/** One point in the depth-over-time series — one per harvest date (the day's latest harvest wins). */
+export interface HistoryPoint {
+  as_of_date: string;
+  as_of_ts: number;
+  movable_at_2pct_usd: number;
+  deepest_single_pool_usd: number;
+  n_tradeable_assets: number;
+  rotation_viable: boolean;
+  tvl_usd_total: number;
+  volume_24h_usd_clean: number;
+  pools_live: number;
+  pools_total: number;
+}
+
 // The one-round-trip envelope from /api/stacks/dashboard.
 export interface Dashboard {
   summary: Summary;
   study: Study;
   facts: Facts;
+  history?: HistoryPoint[];
 }
 
-// The full baked payload the UI renders (dashboard + the derived per-pool ladders).
+// The full baked payload the UI renders (dashboard + the derived per-pool ladders + the trend).
 export interface StacksData extends Dashboard {
   ladders: DepthLadder[];
   live: boolean; // true only if a live /api/stacks/dashboard answered
+  history: HistoryPoint[];
 }

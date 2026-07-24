@@ -75,6 +75,36 @@ def derive_depth_ladders(depth_csv: Path) -> list[dict]:
     return out
 
 
+def append_history(src_data: Path) -> int:
+    """Extend src/data/history.json with this harvest — one point per as_of_date (the day's latest
+    harvest wins), sorted ascending, capped. Backs a real time-series of the finding over time."""
+    summary = json.loads((src_data / "summary.json").read_text())
+    study = json.loads((src_data / "study.json").read_text())
+    v = study.get("verdict", {})
+    pt = {
+        "as_of_date": summary.get("as_of_date"),
+        "as_of_ts": summary.get("as_of_ts"),
+        "movable_at_2pct_usd": v.get("movable_at_2pct_usd"),
+        "deepest_single_pool_usd": v.get("deepest_single_pool_usd"),
+        "n_tradeable_assets": v.get("n_tradeable_assets"),
+        "rotation_viable": v.get("rotation_viable"),
+        "tvl_usd_total": summary.get("tvl_usd_total"),
+        "volume_24h_usd_clean": summary.get("volume_24h_usd_clean"),
+        "pools_live": summary.get("pools_live"),
+        "pools_total": summary.get("pools_total"),
+    }
+    hist_path = src_data / "history.json"
+    try:
+        existing = json.loads(hist_path.read_text()) if hist_path.exists() else []
+    except Exception:
+        existing = []
+    by_date = {p["as_of_date"]: p for p in existing if isinstance(p, dict) and p.get("as_of_date")}
+    by_date[pt["as_of_date"]] = pt  # upsert — this harvest wins for its date
+    out = [by_date[d] for d in sorted(by_date)][-500:]
+    hist_path.write_text(json.dumps(out, separators=(",", ":")) + "\n")
+    return len(out)
+
+
 def main() -> int:
     if SCRATCH.exists():
         shutil.rmtree(SCRATCH)
@@ -103,9 +133,10 @@ def main() -> int:
     for name in required:
         shutil.copyfile(stacks_dir / name, SRC_DATA / name)
     (SRC_DATA / "depth_ladders.json").write_text(json.dumps(ladders, separators=(",", ":")))
+    n_hist = append_history(SRC_DATA)
 
     summary = json.loads((SRC_DATA / "summary.json").read_text())
-    print(f"✓ refreshed src/data — as_of {summary.get('as_of_date')} · {len(ladders)} ladders", flush=True)
+    print(f"✓ refreshed src/data — as_of {summary.get('as_of_date')} · {len(ladders)} ladders · {n_hist} history points", flush=True)
     return 0
 
 

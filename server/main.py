@@ -28,6 +28,14 @@ def _read(name: str):
     return json.loads(path.read_text())
 
 
+def _read_optional(name: str, default):
+    """Like _read but returns `default` instead of 503 — for optional files (history)."""
+    try:
+        return _read(name)
+    except HTTPException:
+        return default
+
+
 app = FastAPI(
     title="Stacks Depth API",
     description="Live read-only market-structure instrument for Stacks DeFi — no custody, read-only.",
@@ -75,6 +83,12 @@ def depth():
     return _read("depth_ladders.json")
 
 
+@app.get("/api/stacks/history")
+def history():
+    """The finding over time — one point per harvest date (movable / TVL / volume / tradeable)."""
+    return _read_optional("history.json", [])
+
+
 @app.get("/api/stacks/dashboard")
 def dashboard():
     """Everything the page needs in one round-trip (what the frontend's fetchLive fetches)."""
@@ -82,4 +96,5 @@ def dashboard():
         "summary": _read("summary.json"),
         "study": _read("study.json"),
         "facts": _read("facts.json"),
+        "history": _read_optional("history.json", []),
     }

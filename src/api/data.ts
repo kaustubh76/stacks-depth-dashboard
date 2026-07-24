@@ -8,13 +8,15 @@ import summary from "../data/summary.json";
 import study from "../data/study.json";
 import facts from "../data/facts.json";
 import ladders from "../data/depth_ladders.json";
-import type { Dashboard, DepthLadder, StacksData, Summary, Study, Facts } from "./types";
+import history from "../data/history.json";
+import type { Dashboard, DepthLadder, HistoryPoint, StacksData, Summary, Study, Facts } from "./types";
 
 const BAKED: StacksData = {
   summary: summary as unknown as Summary,
   study: study as unknown as Study,
   facts: facts as unknown as Facts,
   ladders: ladders as unknown as DepthLadder[],
+  history: history as unknown as HistoryPoint[],
   live: false,
 };
 
@@ -50,6 +52,7 @@ export async function fetchLive(signal?: AbortSignal): Promise<StacksData | null
       study: d.study as Study,
       facts: (d.facts as Facts) ?? BAKED.facts,
       ladders,
+      history: (d.history as HistoryPoint[] | undefined) ?? BAKED.history,
       live: true,
     };
   } catch {
