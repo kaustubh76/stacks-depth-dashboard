@@ -24,10 +24,17 @@ function deltaColor(frac: number | null): string {
   return frac > 0 ? UP : DOWN;
 }
 
+/** signedPct, but a value that rounds to ±0.0% renders as "≈flat" — never a confusing "-0.0%". */
+function pctLabel(frac: number | null): string {
+  if (frac === null) return "—";
+  const s = signedPct(frac);
+  return /^[+-]0\.0%$/.test(s) ? "≈flat" : s;
+}
+
 function DeltaLabel({ frac }: { frac: number | null }) {
   return (
     <span className="font-mono text-[11px] font-semibold tabular-nums" style={{ color: deltaColor(frac) }}>
-      {frac === null ? "—" : signedPct(frac)}
+      {pctLabel(frac)}
     </span>
   );
 }
@@ -94,7 +101,7 @@ export default function DepthTrend({ history }: { history: HistoryPoint[] }) {
           <div className="font-mono text-sm font-bold tabular-nums" style={{ color: deltaColor(dMovable) }}>
             {dMovable === null
               ? "first harvest"
-              : `${signedPct(dMovable)} · ${diffMovable >= 0 ? "+" : "−"}${usd0(Math.abs(diffMovable))}`}
+              : `${pctLabel(dMovable)} · ${diffMovable >= 0 ? "+" : "−"}${usd0(Math.abs(diffMovable))}`}
           </div>
         </div>
       </div>
