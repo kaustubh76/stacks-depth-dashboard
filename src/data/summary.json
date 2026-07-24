@@ -1,41 +1,41 @@
 {
   "as_of_date": "2026-07-24",
-  "as_of_ts": 1784881551,
+  "as_of_ts": 1784900110,
   "dead_fraction": 0.4502,
-  "digest": "49d0af17752235940d7168fa65425792dc183934547f8fb281fededaf8eb3455",
-  "elapsed_s": 73.8,
+  "digest": "b5821271703ed2e5c0ddf7402a736744371f364d663fb0315d7c7c24f5f6958a",
+  "elapsed_s": 75.3,
   "flagged_pools": [
     {
-      "note": "turnover 290x/day \u2014 likely endpoint inconsistency",
+      "note": "turnover 297x/day \u2014 likely endpoint inconsistency",
       "pool_id": "alex:104",
       "symbol": "bridged-btc-bridged-usdt",
-      "volume_24h_usd": 17450513.875223756
+      "volume_24h_usd": 17933463.66522459
     }
   ],
   "hiro_stats": {
     "errors": 0,
     "last_status": 200,
     "rate_stalls": 0,
-    "rate_wait_total_s": 7126.91,
-    "requests": 490,
+    "rate_wait_total_s": 7010.57,
+    "requests": 485,
     "retries": 0
   },
   "pools_dead": 190,
-  "pools_live": 110,
+  "pools_live": 119,
   "pools_total": 422,
   "price_disagreements": [
     {
-      "agreement": 0.9269870575406142,
-      "alex": 65398.958988,
-      "chosen": 60203.622515501804,
+      "agreement": 0.9279711270345384,
+      "alex": 64409.0666079,
+      "chosen": 60516.3502464252,
       "contract": "SP2XD7417HGPRTREMKF748VNEQPDRR0RMANB7X1NK.token-abtc",
-      "dexscreener": 54587.92,
-      "spread": 0.1795745594082195,
+      "dexscreener": 57370.23,
+      "spread": 0.11631297292777157,
       "symbol": "aBTC",
-      "velar": 60623.98855850542
+      "velar": 59769.754131375616
     }
   ],
-  "tvl_usd_total": 1371557.9685789011,
+  "tvl_usd_total": 1345169.4337027194,
   "venues": {
     "alex": {
       "api_disagreements": 0,
@@ -45,9 +45,9 @@
       "live": 29,
       "pools": 168,
       "swaps_24h": 0,
-      "tvl_usd": 516954.8956237951,
-      "volume_24h_usd": 17460051.49043616,
-      "volume_24h_usd_dex": 20167.81
+      "tvl_usd": 501659.12370739365,
+      "volume_24h_usd": 17943010.223136704,
+      "volume_24h_usd_dex": 23545.309999999998
     },
     "bitflow": {
       "api_disagreements": 0,
@@ -56,26 +56,26 @@
       "error": 0,
       "live": 48,
       "pools": 53,
-      "swaps_24h": 163,
-      "tvl_usd": 605019.2374642887,
-      "volume_24h_usd": 46434.13,
-      "volume_24h_usd_dex": 46434.13
+      "swaps_24h": 154,
+      "tvl_usd": 596616.914151911,
+      "volume_24h_usd": 55868.35,
+      "volume_24h_usd_dex": 55868.35
     },
     "velar": {
       "api_disagreements": 0,
       "dead": 49,
-      "dormant": 119,
+      "dormant": 110,
       "error": 0,
-      "live": 33,
+      "live": 42,
       "pools": 201,
       "swaps_24h": 0,
-      "tvl_usd": 249583.83549081715,
-      "volume_24h_usd": 688.8238886362232,
-      "volume_24h_usd_dex": 9243.4
+      "tvl_usd": 246893.39584341453,
+      "volume_24h_usd": 772.9098319645492,
+      "volume_24h_usd_dex": 10645.210000000001
     }
   },
-  "volume_24h_usd_clean": 56660.56910103932,
-  "volume_24h_usd_dex_total": 75845.34,
-  "volume_24h_usd_flagged": 17450513.875223756,
-  "volume_24h_usd_total": 17507174.444324795
+  "volume_24h_usd_clean": 66187.8177440837,
+  "volume_24h_usd_dex_total": 90058.87,
+  "volume_24h_usd_flagged": 17933463.66522459,
+  "volume_24h_usd_total": 17999651.482968673
 }
