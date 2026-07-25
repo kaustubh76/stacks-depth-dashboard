@@ -105,20 +105,34 @@ export default function DataQualityPanel({
             </p>
           </div>
         ))}
-        {summary.price_disagreements.map((p) => (
-          <div key={p.contract} className="rounded-sm border border-edge bg-panel2 p-3">
-            <div className="mb-1 flex items-center gap-2">
-              <StatusPill tone="info" srText="cross-feed price disagreement">
-                price spread
-              </StatusPill>
-              <code className="rounded-sm bg-muted/15 px-1 font-mono text-[11px] text-sub">{p.symbol}</code>
+        {summary.price_disagreements.map((p) => {
+          // `spread` is the (max−min)/mean across whichever feeds are present — with DexScreener it's a
+          // 3-feed figure, so attributing it to "ALEX vs Velar" would overstate their gap. Show the real
+          // 3-feed cross-check when DexScreener is present; else the honest 2-feed ALEX/Velar gap.
+          const twoFeed = p.alex && p.velar ? Math.abs(p.alex - p.velar) / ((p.alex + p.velar) / 2) : null;
+          return (
+            <div key={p.contract} className="rounded-sm border border-edge bg-panel2 p-3">
+              <div className="mb-1 flex items-center gap-2">
+                <StatusPill tone="info" srText="cross-feed price disagreement">
+                  {p.dexscreener != null ? "3-feed price" : "price spread"}
+                </StatusPill>
+                <code className="rounded-sm bg-muted/15 px-1 font-mono text-[11px] text-sub">{p.symbol}</code>
+              </div>
+              {p.dexscreener != null ? (
+                <p className="text-[13px] leading-snug text-sub">
+                  3 feeds disagree by up to <b className="text-ink">{pct(p.spread, 1)}</b>: ALEX {usd0(p.alex)} · Velar{" "}
+                  {usd0(p.velar)} · DexScreener {usd0(p.dexscreener)}. We publish all three and use the mean (
+                  {usd0(p.chosen)}).
+                </p>
+              ) : (
+                <p className="text-[13px] leading-snug text-sub">
+                  ALEX and Velar disagree by <b className="text-ink">{pct(twoFeed, 1)}</b> ({usd0(p.alex)} vs{" "}
+                  {usd0(p.velar)}). We publish both and use the mean ({usd0(p.chosen)}).
+                </p>
+              )}
             </div>
-            <p className="text-[13px] leading-snug text-sub">
-              ALEX and Velar price it <b className="text-ink">{pct(p.spread, 1)}</b> apart (
-              {usd0(p.alex)} vs {usd0(p.velar)}). We publish both and use the mean ({usd0(p.chosen)}).
-            </p>
-          </div>
-        ))}
+          );
+        })}
         <div className="rounded-sm border border-up/30 bg-panel2 p-3">
           <div className="mb-1 flex items-center gap-2">
             <StatusPill tone="up" srText="independent corroboration">

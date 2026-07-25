@@ -52,6 +52,18 @@ describe("history.json is a well-formed real time-series", () => {
       expect(p.n_tradeable_assets).toBeGreaterThanOrEqual(0);
     }
   });
+
+  it("per-asset depth (by_asset_2pct), when present, is a map of finite non-negative numbers", () => {
+    for (const p of history) {
+      if (!p.by_asset_2pct) continue; // optional — points harvested before the field existed lack it
+      const entries = Object.entries(p.by_asset_2pct);
+      expect(entries.length).toBeGreaterThan(0);
+      for (const [, usd] of entries) {
+        expect(Number.isFinite(usd)).toBe(true);
+        expect(usd).toBeGreaterThanOrEqual(0);
+      }
+    }
+  });
 });
 
 describe("the last history point matches the current committed snapshot (append contract)", () => {
@@ -73,5 +85,14 @@ describe("the last history point matches the current committed snapshot (append 
     expect(last.volume_24h_usd_clean).toBe(summary.volume_24h_usd_clean);
     expect(last.pools_live).toBe(summary.pools_live);
     expect(last.pools_total).toBe(summary.pools_total);
+  });
+
+  it("last.by_asset_2pct mirrors study.depth_index.by_asset[*]['0.020'] exactly", () => {
+    expect(last.by_asset_2pct).toBeTruthy();
+    const byAsset = study.depth_index.by_asset;
+    expect(Object.keys(last.by_asset_2pct!).sort()).toEqual(Object.keys(byAsset).sort());
+    for (const [asset, usd] of Object.entries(last.by_asset_2pct!)) {
+      expect(usd).toBe(byAsset[asset]["0.020"]);
+    }
   });
 });

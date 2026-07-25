@@ -92,6 +92,11 @@ def append_history(src_data: Path) -> int:
         "volume_24h_usd_clean": summary.get("volume_24h_usd_clean"),
         "pools_live": summary.get("pools_live"),
         "pools_total": summary.get("pools_total"),
+        # per-asset movable @ ≤2% — trends which assets clear the depth bar (and the gap to a 3rd).
+        "by_asset_2pct": {
+            a: study.get("depth_index", {}).get("by_asset", {}).get(a, {}).get("0.020")
+            for a in study.get("depth_index", {}).get("by_asset", {})
+        },
     }
     hist_path = src_data / "history.json"
     try:

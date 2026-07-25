@@ -14,9 +14,10 @@ export interface PriceDisagreement {
   contract: string;
   alex: number | null;
   velar: number | null;
+  dexscreener: number | null; // the 3rd feed — `spread` is the 3-feed (max−min)/mean, not ALEX-vs-Velar
   chosen: number;
-  spread: number; // fractional (0.0749 = 7.49%)
-  agreement: number; // 0..1
+  spread: number; // fractional (0.0749 = 7.49%), across whichever of the 3 feeds are present
+  agreement: number; // 0..1 — velar/alex (the 2-feed ratio)
 }
 
 export interface Venue {
@@ -175,6 +176,9 @@ export interface HistoryPoint {
   volume_24h_usd_clean: number;
   pools_live: number;
   pools_total: number;
+  /** Per-asset movable @ ≤2% (asset → USD), for the depth-by-asset trend. Optional: points harvested
+   * before this field was added won't carry it (the git backfill re-seeds all committed points). */
+  by_asset_2pct?: Record<string, number>;
 }
 
 // The one-round-trip envelope from /api/stacks/dashboard.

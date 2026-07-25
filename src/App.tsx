@@ -40,6 +40,7 @@ import DepthCalculator from "./components/panels/DepthCalculator";
 import MovableByThreshold from "./components/panels/MovableByThreshold";
 import AssetDepthTable from "./components/panels/AssetDepthTable";
 import DepthTrend from "./components/panels/DepthTrend";
+import DepthByAsset from "./components/panels/DepthByAsset";
 import DataQualityPanel from "./components/panels/DataQualityPanel";
 import VenuesBreakdown from "./components/panels/VenuesBreakdown";
 import RotationBacktest from "./components/panels/RotationBacktest";
@@ -461,9 +462,12 @@ export default function App() {
           </div>
         </SectionBand>
 
-        <SectionBand title="The evidence" summary="depth over time · data quality · venues · backtest · provenance" defaultOpen={false}>
+        <SectionBand title="The evidence" summary="depth over time · by asset · data quality · venues · backtest · provenance" defaultOpen={false}>
           <Panel label="Depth over time">
             <DepthTrend history={data.history} />
+          </Panel>
+          <Panel label="Depth by asset">
+            <DepthByAsset history={data.history} verdict={study.verdict} />
           </Panel>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <Panel label="Data quality">
