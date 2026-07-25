@@ -2,8 +2,17 @@ import StatusPill from "../ui/StatusPill";
 import { useTheme } from "../../hooks/useTheme";
 import { daysSince, measuredLabel } from "../../lib/format";
 
-/** Title band + freshness pill + theme toggle. */
-export default function Masthead({ asOf, served }: { asOf: string; served?: boolean }) {
+/** Title band + freshness pill + theme toggle. `onReadProposal` opens the grant proposal route
+ * (#v=about) — the always-visible line that connects the instrument to the DeGrants ask it backs. */
+export default function Masthead({
+  asOf,
+  served,
+  onReadProposal,
+}: {
+  asOf: string;
+  served?: boolean;
+  onReadProposal?: () => void;
+}) {
   const { theme, toggle } = useTheme();
   const stale = daysSince(asOf) > 2;
   return (
@@ -16,6 +25,16 @@ export default function Masthead({ asOf, served }: { asOf: string; served?: bool
           <h1 className="mt-2 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">
             How much can actually move on Stacks DeFi?
           </h1>
+          {onReadProposal && (
+            <button
+              type="button"
+              onClick={onReadProposal}
+              className="mt-2 inline-block text-left font-mono text-[11px] text-muted transition hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              <span className="font-semibold text-brand">Built for DeGrants</span> — a Stacks Endowment public good ·
+              read the proposal →
+            </button>
+          )}
         </div>
         <button
           type="button"

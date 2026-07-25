@@ -14,20 +14,30 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230f131a'/%3E%3Crect x='6' y='19' width='4' height='7' rx='1' fill='%2338b2c4'/%3E%3Crect x='13' y='13' width='4' height='13' rx='1' fill='%2343b581'/%3E%3Crect x='20' y='7' width='4' height='19' rx='1' fill='%2338b2c4'/%3E%3C/svg%3E"
     />
-    <!-- Social / Open Graph + Twitter card -->
+    <!-- Social / Open Graph + Twitter card — finding-framed + number-light (a static file can't read
+         study.json, so no specific figure is baked here; the live page + the citation carry the numbers). -->
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="Stacks Depth — how much can actually move on Stacks DeFi?" />
+    <meta property="og:site_name" content="Stacks Depth" />
+    <meta property="og:title" content="Stacks Depth — most of Stacks DeFi is too thin to rotate" />
     <meta
       property="og:description"
-      content="A live, interactive market-structure instrument: drag-to-explore slippage depth, a $-size calculator, and a slippage-budget verdict — over a reproducible on-chain snapshot."
+      content="A measured, reproducible, self-correcting on-chain depth study: only a minority of the assets a rotation needs clear the depth bar, so systematic trading is not currently viable — and this is the threshold at which that would flip. A DeGrants public good."
     />
     <meta property="og:url" content="https://stacks-depth-dashboard.onrender.com/" />
-    <meta name="twitter:card" content="summary" />
-    <meta name="twitter:title" content="Stacks Depth — market-structure instrument" />
+    <meta property="og:image" content="https://stacks-depth-dashboard.onrender.com/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="Stacks Depth — how much can actually move on Stacks DeFi? Measured, reproducible, not currently viable."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Stacks Depth — most of Stacks DeFi is too thin to rotate" />
     <meta
       name="twitter:description"
-      content="Drag-to-explore slippage depth, a $-size calculator, and a live slippage-budget verdict across ALEX, Velar & Bitflow."
+      content="A measured, reproducible, self-correcting on-chain depth study of Stacks DeFi. A DeGrants public good — the dataset + method, given away."
     />
+    <meta name="twitter:image" content="https://stacks-depth-dashboard.onrender.com/og.png" />
     <!-- Set the theme before first paint (no flash of wrong theme). Mirrors hooks/useTheme.ts. -->
     <script>
       (function () {

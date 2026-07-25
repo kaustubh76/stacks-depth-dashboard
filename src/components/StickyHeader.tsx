@@ -12,7 +12,7 @@ export interface NavSection {
 
 /**
  * The persistent top bar: brand + headline movable + section nav (with scroll-spy active state)
- * + live pill + ⌘K + theme. Always visible (sticky), so the 4-section IA is navigable from
+ * + live pill + ⌘K + theme. Always visible (sticky), so the 6-band IA is navigable from
  * anywhere. Clicking a section auto-expands + scrolls to it via flashSection.
  */
 export default function StickyHeader({

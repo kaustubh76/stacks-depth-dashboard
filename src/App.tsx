@@ -8,6 +8,8 @@ import { flashSection, sectionId } from "./lib/sections";
 import { FOCUS_PLANNER_EVENT } from "./lib/cockpit";
 import { usd0 } from "./lib/format";
 import { buildScenario, downloadText, poolsCsv, scenarioJson, scenarioSummary } from "./lib/export";
+import grantJson from "./data/grant.json";
+import { type Grant, citableFinding } from "./lib/grant";
 import { usePoolSelection } from "./hooks/usePoolSelection";
 import TradePlanner from "./components/panels/TradePlanner";
 import PoolBrowser from "./components/panels/PoolBrowser";
@@ -21,6 +23,7 @@ import SectionBand from "./components/SectionBand";
 import LiveTicker from "./components/LiveTicker";
 import TradePlanPage from "./components/TradePlanPage";
 import PoolDetailPage from "./components/PoolDetailPage";
+import AboutPage from "./components/AboutPage";
 import CommandPalette from "./components/cockpit/CommandPalette";
 import KeyboardLayer from "./components/cockpit/KeyboardLayer";
 import Cheatsheet from "./components/cockpit/Cheatsheet";
@@ -53,7 +56,10 @@ function Panel({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-/** The 4-section information architecture (band titles must match the SectionBand titles below). */
+/** The static grant framing (the ask) — measured numbers still render live from study/summary. */
+const GRANT = grantJson as unknown as Grant;
+
+/** The 6-band information architecture (band titles must match the SectionBand titles below). */
 const SECTIONS: NavSection[] = [
   { label: "Answer", short: "Answer" },
   { label: "Explore", short: "Explore" },
@@ -66,7 +72,7 @@ const SECTIONS: NavSection[] = [
 export default function App() {
   const [data, setData] = useState<StacksData>(() => bakedData());
   const { summary, study, ladders } = data;
-  const { budget, setBudget, moveX, setMoveX, asset, setAsset, view, pool, openPlan, openPool, closePlan, goDashboard, shareLink } = useScenario();
+  const { budget, setBudget, moveX, setMoveX, asset, setAsset, view, pool, openPlan, openAbout, openPool, closePlan, goDashboard, shareLink } = useScenario();
 
   const [liveEnabled, setLiveEnabled] = useState(true);
   const { live, refresh } = useLiveData(liveEnabled);
@@ -147,6 +153,16 @@ export default function App() {
       toast.warn("Clipboard unavailable — use the share link instead");
     }
   }, [planSummary, toast]);
+
+  // The finding, as a one-paragraph citation a grant steward can paste verbatim (live numbers).
+  const copyCitable = useCallback(() => {
+    try {
+      void navigator.clipboard?.writeText(citableFinding(study, summary, GRANT));
+      toast.success("Finding citation copied");
+    } catch {
+      toast.warn("Clipboard unavailable — read the proposal instead");
+    }
+  }, [study, summary, toast]);
 
   // Self-demonstrating intro: ~1s after load, gently sweep the budget once so the whole page
   // visibly reacts (movable figure, verdict, bars, table) — proving it's interactive. Aborts on
@@ -266,6 +282,14 @@ export default function App() {
     );
   }
 
+  if (view === "about") {
+    return (
+      <ErrorBoundary label="Proposal" fallback={pageErrorFallback}>
+        <AboutPage study={study} summary={summary} facts={data.facts} onClose={goDashboard} shareLink={shareLink} />
+      </ErrorBoundary>
+    );
+  }
+
   return (
     <>
       <SkipLink />
@@ -295,7 +319,7 @@ export default function App() {
       <Tour />
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-6 outline-none sm:px-6 sm:py-8">
-        <Masthead asOf={summary.as_of_date} served={data.live} />
+        <Masthead asOf={summary.as_of_date} served={data.live} onReadProposal={openAbout} />
 
         {/* Live ribbon — the top of the page reads current, not frozen */}
         <LiveTicker live={live} onRefresh={refresh} onCopyLink={copyLink} />
@@ -330,6 +354,14 @@ export default function App() {
               className="rounded-sm border border-edge px-3.5 py-2 font-mono text-[12px] text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
             >
               See the evidence →
+            </button>
+            <button
+              type="button"
+              onClick={copyCitable}
+              title="copy a one-paragraph, paste-able citation of the finding for a grant steward"
+              className="rounded-sm border border-edge px-3.5 py-2 font-mono text-[12px] text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+            >
+              ⧉ Cite this finding
             </button>
           </div>
         </div>
@@ -449,7 +481,7 @@ export default function App() {
           </Panel>
         </SectionBand>
 
-        <Footer summary={summary} />
+        <Footer summary={summary} onReadProposal={openAbout} />
       </main>
     </>
   );

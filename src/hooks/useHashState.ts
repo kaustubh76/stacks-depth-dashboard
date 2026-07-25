@@ -19,7 +19,7 @@ export const X_MAX = 100000;
 export const ASSETS = ["STX", "sBTC", "aeUSDC", "aBTC", "USDh"] as const;
 export const DEFAULT_ASSET = "STX";
 
-export type View = "dashboard" | "plan" | "pool";
+export type View = "dashboard" | "plan" | "pool" | "about";
 
 const clamp = (v: number, lo: number, hi: number) => Math.min(Math.max(v, lo), hi);
 
@@ -33,7 +33,8 @@ function readHash(): { budget: number; moveX: number; asset: string; view: View;
     const b = parseFloat(h.get("b") ?? "");
     const x = parseFloat(h.get("x") ?? "");
     const vRaw = h.get("v");
-    let view: View = vRaw === "plan" ? "plan" : vRaw === "pool" ? "pool" : "dashboard";
+    let view: View =
+      vRaw === "plan" ? "plan" : vRaw === "pool" ? "pool" : vRaw === "about" ? "about" : "dashboard";
     let pool: string | null = null;
     if (view === "pool") {
       const p = h.get("p");
@@ -56,6 +57,7 @@ function hashFor(budget: number, moveX: number, asset: string, view: View, pool:
   let s = `#b=${budget.toFixed(4)}&x=${Math.round(moveX)}&a=${asset}`;
   if (view === "plan") s += "&v=plan";
   else if (view === "pool" && pool) s += `&v=pool&p=${encodeURIComponent(pool)}`;
+  else if (view === "about") s += "&v=about";
   return s;
 }
 
@@ -69,6 +71,7 @@ export interface Scenario {
   view: View;
   pool: string | null;
   openPlan: () => void;
+  openAbout: () => void;
   openPool: (key: string) => void;
   closePlan: () => void; // alias of goDashboard (kept for existing callers)
   goDashboard: () => void;
@@ -127,6 +130,19 @@ export function useScenario(): Scenario {
     setViewRaw("plan");
   }, []);
 
+  // Open the proposal page (a distinct, deep-linkable #v=about view) — pushState so browser-back returns.
+  const openAbout = useCallback(() => {
+    const c = ref.current;
+    if (c.view === "about") return;
+    try {
+      window.history.pushState(null, "", hashFor(c.budget, c.moveX, c.asset, "about", null));
+    } catch {
+      /* ignore */
+    }
+    setPoolRaw(null);
+    setViewRaw("about");
+  }, []);
+
   const openPool = useCallback((key: string) => {
     const c = ref.current;
     try {
@@ -158,6 +174,7 @@ export function useScenario(): Scenario {
     view,
     pool,
     openPlan,
+    openAbout,
     openPool,
     closePlan: goDashboard,
     goDashboard,
