@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
-import { bakedData, fetchLive } from "./api/data";
+import { bakedData, fetchLive, type ApiStatus } from "./api/data";
 import type { StacksData } from "./api/types";
 import { useScenario } from "./hooks/useHashState";
 import { useLiveData } from "./hooks/useLiveData";
@@ -76,32 +76,48 @@ export default function App() {
   const { budget, setBudget, moveX, setMoveX, asset, setAsset, view, pool, openPlan, openAbout, openPool, closePlan, goDashboard, shareLink } = useScenario();
 
   const [liveEnabled, setLiveEnabled] = useState(true);
+  const [apiStatus, setApiStatus] = useState<ApiStatus>("connecting");
   const { live, refresh } = useLiveData(liveEnabled);
   const selection = usePoolSelection();
   const { toast } = useToast();
 
-  // Real live client: fetch the current dataset from the API on mount + every 5 min, swapping the
-  // baked snapshot for the live one. Graceful — if the API is down, fetchLive returns null and the
-  // baked data stands, so the dashboard never blanks (and existing sessions pick up a fresh harvest
-  // without waiting for a frontend redeploy).
+  // Real live client: fetch the current dataset from the API and swap the baked snapshot for the live
+  // one, tracking a truthful `apiStatus` (connecting → live → offline). Graceful — if the API is down,
+  // fetchLive returns null, the baked data stands (never blanks), and the UI says so instead of faking
+  // "live". Self-scheduling cadence: retry fast (~30s) while connecting/offline so a Render cold start
+  // recovers in seconds, then settle to 5 min once live.
   useEffect(() => {
     let alive = true;
     let ctrl: AbortController | null = null;
+    let timer: number | undefined;
     const load = () => {
       ctrl?.abort();
       ctrl = new AbortController();
+      // Don't flash "connecting" over a healthy live session's background refresh.
+      setApiStatus((s) => (s === "live" ? "live" : "connecting"));
       fetchLive(ctrl.signal)
         .then((live) => {
-          if (alive && live) setData(live);
+          if (!alive) return;
+          if (live) {
+            setData(live);
+            setApiStatus("live");
+            timer = window.setTimeout(load, 5 * 60 * 1000);
+          } else {
+            setApiStatus("offline");
+            timer = window.setTimeout(load, 30 * 1000);
+          }
         })
-        .catch(() => {});
+        .catch(() => {
+          if (!alive) return;
+          setApiStatus("offline");
+          timer = window.setTimeout(load, 30 * 1000);
+        });
     };
     load();
-    const id = window.setInterval(load, 5 * 60 * 1000);
     return () => {
       alive = false;
       ctrl?.abort();
-      window.clearInterval(id);
+      window.clearTimeout(timer);
     };
   }, []);
 
@@ -296,7 +312,8 @@ export default function App() {
       <SkipLink />
       <StickyHeader
         movableText={usd0(study.verdict.movable_at_2pct_usd)}
-        live={live.anyLive}
+        apiStatus={apiStatus}
+        feedsLive={live.anyLive}
         liveEnabled={liveEnabled}
         onToggleLive={() => setLiveEnabled((v) => !v)}
         sections={SECTIONS}
@@ -320,7 +337,7 @@ export default function App() {
       <Tour />
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-6 outline-none sm:px-6 sm:py-8">
-        <Masthead asOf={summary.as_of_date} served={data.live} onReadProposal={openAbout} />
+        <Masthead asOf={summary.as_of_date} apiStatus={apiStatus} onReadProposal={openAbout} />
 
         {/* Live ribbon — the top of the page reads current, not frozen */}
         <LiveTicker live={live} onRefresh={refresh} onCopyLink={copyLink} />

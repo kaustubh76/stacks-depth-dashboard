@@ -1,16 +1,17 @@
 import StatusPill from "../ui/StatusPill";
 import { useTheme } from "../../hooks/useTheme";
 import { daysSince, measuredLabel } from "../../lib/format";
+import type { ApiStatus } from "../../api/data";
 
 /** Title band + freshness pill + theme toggle. `onReadProposal` opens the grant proposal route
  * (#v=about) — the always-visible line that connects the instrument to the DeGrants ask it backs. */
 export default function Masthead({
   asOf,
-  served,
+  apiStatus,
   onReadProposal,
 }: {
   asOf: string;
-  served?: boolean;
+  apiStatus: ApiStatus; // dataset backend liveness — always shown, honest during cold start / outage
   onReadProposal?: () => void;
 }) {
   const { theme, toggle } = useTheme();
@@ -49,11 +50,20 @@ export default function Masthead({
         <StatusPill tone={stale ? "warn" : "up"} dot srText={`on-chain measurement ${measuredLabel(asOf)}`}>
           {measuredLabel(asOf)}
         </StatusPill>
-        {served && (
-          <StatusPill tone="brand" dot pulse srText="dataset served live from the Stacks Depth API">
-            live api
-          </StatusPill>
-        )}
+        <StatusPill
+          tone={apiStatus === "live" ? "brand" : apiStatus === "offline" ? "warn" : "neutral"}
+          dot
+          pulse={apiStatus !== "offline"}
+          srText={
+            apiStatus === "live"
+              ? "dataset served live from the Stacks Depth API"
+              : apiStatus === "offline"
+                ? "the backend API is unreachable — showing the committed snapshot"
+                : "connecting to the backend API"
+          }
+        >
+          {apiStatus === "live" ? "live api" : apiStatus === "offline" ? "snapshot · API offline" : "connecting…"}
+        </StatusPill>
         <span>
           {asOf} snapshot · re-harvests every 6h · chain is source of truth, vendor APIs cross-check
         </span>

@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write # open/append a failure-alert issue if a harvest breaks (see the final step)
 
 concurrency:
   group: reharvest
@@ -60,4 +61,23 @@ jobs:
             git commit -m "chore: re-harvest stacks depth ($AS_OF) [auto]"
             git push
             echo "pushed refreshed data — Render will auto-deploy"
+          fi
+
+      # Make a broken harvest VISIBLE instead of silently freezing the data. Runs only on failure of any
+      # step above (harvest error, or the npm-test reproducibility gate). Dedups: reuse one open alert
+      # issue rather than spamming every 6h. Uses the preinstalled gh CLI + GITHUB_TOKEN (no marketplace
+      # action → no supply-chain surface).
+      - name: Alert on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Re-harvest failed"
+          run_url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          existing=$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number' 2>/dev/null || true)
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "Failed again — the committed dataset did not refresh. Run: $run_url"
+          else
+            gh issue create --title "$title" \
+              --body "The scheduled re-harvest (or its npm-test reproducibility gate) failed, so src/data did not refresh and the live site is serving the last good snapshot. Latest failing run: $run_url"
           fi

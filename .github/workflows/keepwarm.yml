@@ -1,0 +1,26 @@
+name: keep-warm stacks-depth-api
+
+# The API is a Render free-tier web service that sleeps after ~15 min idle (~30-60s cold start on the
+# next request). A lightweight /health ping every ~13 min keeps it warm so visitors don't hit that cold
+# start. Best-effort — a failed ping (e.g. mid-deploy) is NOT treated as an error here; harvest-failure
+# alerting lives in reharvest.yml. Free on a public repo. The frontend also degrades honestly (shows
+# "connecting…/snapshot" instead of a fake "LIVE"), so this only reduces how often that state is seen.
+
+on:
+  schedule:
+    - cron: "*/13 * * * *" # ~every 13 minutes (UTC); dyno idles at 15 min
+  workflow_dispatch: {}
+
+permissions: {} # least privilege — a curl needs nothing
+
+concurrency:
+  group: keepwarm
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping /health
+        run: curl -sfS --max-time 30 --retry 2 https://stacks-depth-api.onrender.com/health || true

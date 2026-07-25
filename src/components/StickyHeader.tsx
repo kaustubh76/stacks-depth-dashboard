@@ -4,6 +4,7 @@ import { useTheme } from "../hooks/useTheme";
 import { flashSection, sectionId } from "../lib/sections";
 import { OPEN_PALETTE_EVENT } from "./cockpit/CommandPalette";
 import StatusPill from "./ui/StatusPill";
+import type { ApiStatus } from "../api/data";
 
 export interface NavSection {
   label: string; // must match a SectionBand title
@@ -17,13 +18,15 @@ export interface NavSection {
  */
 export default function StickyHeader({
   movableText,
-  live,
+  apiStatus,
+  feedsLive,
   liveEnabled,
   onToggleLive,
   sections,
 }: {
   movableText: string;
-  live: boolean;
+  apiStatus: ApiStatus; // the dataset's backend liveness (the truthful "is this live" signal)
+  feedsLive: boolean; // the external market feeds (CoinGecko/Hiro/DexScreener) — a separate axis
   liveEnabled: boolean;
   onToggleLive: () => void;
   sections: NavSection[];
@@ -83,15 +86,31 @@ export default function StickyHeader({
           })}
         </nav>
         <div className="ml-auto flex items-center gap-1.5">
+          {/* Dataset liveness — the truthful "is this page showing live or baked data" signal. */}
+          <StatusPill
+            tone={apiStatus === "live" ? "up" : apiStatus === "offline" ? "warn" : "neutral"}
+            dot
+            pulse={apiStatus === "live"}
+            srText={
+              apiStatus === "live"
+                ? "dataset is live from the Stacks Depth API"
+                : apiStatus === "offline"
+                  ? "API unreachable — showing the committed snapshot"
+                  : "connecting to the backend API"
+            }
+          >
+            {apiStatus === "live" ? "LIVE" : apiStatus === "offline" ? "SNAPSHOT" : "…"}
+          </StatusPill>
+          {/* Market feeds (CoinGecko/Hiro/DexScreener) — a SEPARATE axis; this toggles them. */}
           <button
             type="button"
             onClick={onToggleLive}
             className="focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
-            aria-label={liveEnabled ? "pause live data" : "resume live data"}
-            title={liveEnabled ? "pause live data" : "resume live data"}
+            aria-label={liveEnabled ? "pause market feeds" : "resume market feeds"}
+            title={liveEnabled ? "pause market feeds" : "resume market feeds"}
           >
-            <StatusPill tone={liveEnabled && live ? "up" : "neutral"} dot pulse={liveEnabled && live}>
-              {liveEnabled ? (live ? "LIVE" : "…") : "PAUSED"}
+            <StatusPill tone={liveEnabled && feedsLive ? "info" : "neutral"} dot pulse={liveEnabled && feedsLive}>
+              {liveEnabled ? (feedsLive ? "FEEDS" : "…") : "PAUSED"}
             </StatusPill>
           </button>
           <button

@@ -30,14 +30,29 @@ export function bakedData(): StacksData {
  * service rather than a baked static file. Overridable at build time via VITE_API_BASE. */
 const API_BASE = (import.meta.env.VITE_API_BASE || "https://stacks-depth-api.onrender.com").replace(/\/$/, "");
 
+/** The dataset's backend-liveness — the ONE truthful signal for "is the page showing live or baked
+ * data": `connecting` while a fetch is in flight (incl. the Render free-tier cold start), `live` once
+ * the API answered, `offline` when it timed out / failed and the baked snapshot is standing in. */
+export type ApiStatus = "connecting" | "live" | "offline";
+
+/** Bound each live fetch so a cold/hung Render dyno can't leave it pending until the next poll — on
+ * timeout we resolve null and the caller flips to `offline` (then retries fast). */
+const FETCH_TIMEOUT_MS = 12_000;
+
 /** Fetch the current dataset from the live API; resolve to its payload (marked live) or null if the
  * API doesn't answer — in which case the baked snapshot stands, so the site never blanks. Also takes
  * the per-pool ladders live from /api/stacks/depth when available (so the curves are live too). */
 export async function fetchLive(signal?: AbortSignal): Promise<StacksData | null> {
+  // Compose a ~12s timeout with the caller's abort signal (unmount / next poll), so a hung request
+  // is always bounded. `AbortSignal.timeout`/`any` aren't guaranteed everywhere → a manual controller.
+  const ctrl = new AbortController();
+  const onAbort = () => ctrl.abort();
+  signal?.addEventListener("abort", onAbort);
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
     const [dashRes, depthRes] = await Promise.all([
-      fetch(`${API_BASE}/api/stacks/dashboard`, { headers: { accept: "application/json" }, signal }),
-      fetch(`${API_BASE}/api/stacks/depth`, { headers: { accept: "application/json" }, signal }).catch(() => null),
+      fetch(`${API_BASE}/api/stacks/dashboard`, { headers: { accept: "application/json" }, signal: ctrl.signal }),
+      fetch(`${API_BASE}/api/stacks/depth`, { headers: { accept: "application/json" }, signal: ctrl.signal }).catch(() => null),
     ]);
     if (!dashRes.ok) return null;
     const d = (await dashRes.json()) as Partial<Dashboard>;
@@ -56,6 +71,9 @@ export async function fetchLive(signal?: AbortSignal): Promise<StacksData | null
       live: true,
     };
   } catch {
-    return null; // offline / CORS / API down — baked data stands
+    return null; // offline / CORS / API down / timed out — baked data stands
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener("abort", onAbort);
   }
 }

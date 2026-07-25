@@ -19,8 +19,8 @@ export default function LiveTicker({
   const on = live.anyLive;
   return (
     <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-sm border border-edge bg-panel2/40 px-3 py-1.5 font-mono text-[11px] text-muted">
-      <StatusPill tone={on ? "up" : "neutral"} dot pulse={on} srText={on ? "live feeds connected" : "connecting to live feeds"}>
-        {on ? "LIVE" : "…"}
+      <StatusPill tone={on ? "info" : "neutral"} dot pulse={on} srText={on ? "market feeds connected" : "connecting to market feeds"}>
+        {on ? "FEEDS" : "…"}
       </StatusPill>
       {live.chainHeight !== null && (
         <span>
