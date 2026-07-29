@@ -50,6 +50,23 @@ export function ago(ts: number | null | undefined, now: number): string {
   return `${Math.round(s / 3600)}h ago`;
 }
 
+export type FeedStatus = "live" | "stale" | "connecting" | "down";
+
+/** Classify a polled live feed from its last-success epoch: `live` (fresh), `stale` (answered but now
+ * old), `connecting` (no answer yet, still inside the startup window), `down` (no answer past it). Lets
+ * the live panels show an honest "unavailable/stale" state instead of a perpetual "connecting…" or a
+ * latched "LIVE" over stale data. `startedAt` is when polling (re)started, both epoch-ms vs `now`. */
+export function feedStatus(
+  updated: number | null,
+  now: number,
+  startedAt: number,
+  staleMs = 90_000,
+  downMs = 40_000,
+): FeedStatus {
+  if (updated !== null) return now - updated < staleMs ? "live" : "stale";
+  return now - startedAt < downMs ? "connecting" : "down";
+}
+
 /** Whole days since an ISO date (YYYY-MM-DD), clamped ≥ 0. */
 export function daysSince(dateStr: string | null | undefined, now = Date.now()): number {
   if (!dateStr) return 0;

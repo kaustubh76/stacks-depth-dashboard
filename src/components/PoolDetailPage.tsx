@@ -60,7 +60,7 @@ export default function PoolDetailPage({
       depth2: maxNotionalAt(ladder.points, 0.02),
       movableAtBudget: maxNotionalAt(ladder.points, budget),
       slipAtSize: slippageAt(ladder.points, moveX),
-      feasibleAtSize: moveX <= ladder.points[ladder.points.length - 1].notional,
+      feasibleAtSize: !!ladder.points?.length && moveX <= ladder.points[ladder.points.length - 1].notional,
       liveLiq: drift?.liveLiq ?? null,
       driftPct: drift?.driftPct ?? null,
     };

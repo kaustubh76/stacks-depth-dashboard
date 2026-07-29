@@ -228,6 +228,7 @@ export default function TradePlanPage({
                 </div>
               )}
             </div>
+            <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[13px]">
               <thead>
                 <tr className="border-b border-edge text-left font-mono text-[10.5px] uppercase tracking-wide text-muted">
@@ -255,6 +256,7 @@ export default function TradePlanPage({
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         )}
 

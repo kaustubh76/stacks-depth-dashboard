@@ -29,7 +29,8 @@ const BUCKETS = ["0.005", "0.010", "0.020", "0.050"] as const;
 
 describe("depth.ts reproduces the committed study.json (reproducibility contract)", () => {
   it("has the expected ladder granularity (one row per pool-side)", () => {
-    // 56 (pool_id, major_symbol) rows — bitflow stableswaps appear once per major side; do NOT dedupe.
+    // one row per (pool_id, major_symbol) — bitflow stableswaps appear once per major side; do NOT dedupe.
+    // (count is read from the JSON below, so it tracks re-harvests instead of a hardcoded number)
     expect(ladders.length).toBe(study.depth_index.by_threshold["0.020"].pools_with_any_depth);
   });
 

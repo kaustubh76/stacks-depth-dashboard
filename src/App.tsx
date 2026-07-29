@@ -81,6 +81,13 @@ export default function App() {
   const selection = usePoolSelection();
   const { toast } = useToast();
 
+  // Refresh should also RESUME feeds when paused — otherwise r / ⌘K-refresh / ↻ are silent no-ops that
+  // still toast "Refreshing…". Auto-resume makes the affordance always do what it says.
+  const handleRefresh = useCallback(() => {
+    setLiveEnabled(true);
+    refresh();
+  }, [refresh]);
+
   // Real live client: fetch the current dataset from the API and swap the baked snapshot for the live
   // one, tracking a truthful `apiStatus` (connecting → live → offline). Graceful — if the API is down,
   // fetchLive returns null, the baked data stands (never blanks), and the UI says so instead of faking
@@ -256,12 +263,38 @@ export default function App() {
     </div>
   );
 
+  // Cockpit overlays (⌘K palette, g-nav, cheatsheet, tour), rendered on EVERY route so the shortcuts
+  // the Cheatsheet advertises as global actually work off-dashboard. Dashboard-only actions degrade
+  // gracefully (flashSection no-ops when the section isn't mounted; the Tour finds no section ids on a
+  // sub-page and doesn't start). Uses handleRefresh so refresh resumes paused feeds everywhere.
+  const cockpit = (
+    <>
+      <CommandPalette
+        actions={{
+          refreshLive: handleRefresh,
+          copyLink,
+          downloadCsv,
+          planTrade: () => {
+            openPlan();
+            window.dispatchEvent(new Event(FOCUS_PLANNER_EVENT));
+          },
+          comparePools: () => flashSection(sectionId("Pool compare")),
+        }}
+      />
+      <KeyboardLayer onRefreshLive={handleRefresh} />
+      <Cheatsheet />
+      <Tour />
+    </>
+  );
+
   // The Trade Plan page is a full-screen route (deep-linked via #v=plan) — render it instead of
   // the dashboard when active. All hooks above run unconditionally; this switch is after them.
   if (view === "plan") {
     return (
-      <ErrorBoundary label="Trade plan" fallback={pageErrorFallback}>
-        <TradePlanPage
+      <>
+        {cockpit}
+        <ErrorBoundary label="Trade plan" fallback={pageErrorFallback}>
+          <TradePlanPage
           ladders={ladders}
           budget={budget}
           setBudget={setBudget}
@@ -275,14 +308,17 @@ export default function App() {
           onDownloadJson={downloadScenarioJson}
           asOf={summary.as_of_date}
         />
-      </ErrorBoundary>
+        </ErrorBoundary>
+      </>
     );
   }
 
   if (view === "pool" && pool) {
     return (
-      <ErrorBoundary label="Pool detail" fallback={pageErrorFallback}>
-        <PoolDetailPage
+      <>
+        {cockpit}
+        <ErrorBoundary label="Pool detail" fallback={pageErrorFallback}>
+          <PoolDetailPage
           ladders={ladders}
           live={live}
           budget={budget}
@@ -295,15 +331,19 @@ export default function App() {
           shareLink={shareLink}
           asOf={summary.as_of_date}
         />
-      </ErrorBoundary>
+        </ErrorBoundary>
+      </>
     );
   }
 
   if (view === "about") {
     return (
-      <ErrorBoundary label="Proposal" fallback={pageErrorFallback}>
-        <AboutPage study={study} summary={summary} facts={data.facts} onClose={goDashboard} shareLink={shareLink} />
-      </ErrorBoundary>
+      <>
+        {cockpit}
+        <ErrorBoundary label="Proposal" fallback={pageErrorFallback}>
+          <AboutPage study={study} summary={summary} facts={data.facts} onClose={goDashboard} shareLink={shareLink} />
+        </ErrorBoundary>
+      </>
     );
   }
 
@@ -319,28 +359,14 @@ export default function App() {
         sections={SECTIONS}
       />
 
-      {/* Cockpit overlays — self-wire via the window-event bus */}
-      <CommandPalette
-        actions={{
-          refreshLive: refresh,
-          copyLink,
-          downloadCsv,
-          planTrade: () => {
-            openPlan();
-            window.dispatchEvent(new Event(FOCUS_PLANNER_EVENT));
-          },
-          comparePools: () => flashSection(sectionId("Pool compare")),
-        }}
-      />
-      <KeyboardLayer onRefreshLive={refresh} />
-      <Cheatsheet />
-      <Tour />
+      {/* Cockpit overlays — self-wire via the window-event bus (shared with the sub-page routes) */}
+      {cockpit}
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-6 outline-none sm:px-6 sm:py-8">
         <Masthead asOf={summary.as_of_date} apiStatus={apiStatus} onReadProposal={openAbout} />
 
         {/* Live ribbon — the top of the page reads current, not frozen */}
-        <LiveTicker live={live} onRefresh={refresh} onCopyLink={copyLink} />
+        <LiveTicker live={live} enabled={liveEnabled} onRefresh={handleRefresh} onCopyLink={copyLink} />
 
         {/* ── THE ANSWER ── the headline finding, stated once */}
         <div id={sectionId("Answer")} data-section-label="Answer" className="scroll-mt-28">
@@ -348,7 +374,7 @@ export default function App() {
             <VerdictBanner verdict={study.verdict} ladders={ladders} budget={budget} facts={data.facts} setBudget={setBudget} />
           </Panel>
           <Panel label="Headline">
-            <HeadlineTiles summary={summary} verdict={study.verdict} />
+            <HeadlineTiles summary={summary} />
           </Panel>
           {/* the three ways forward */}
           <div className="mb-8 flex flex-wrap items-center gap-2">
@@ -448,7 +474,7 @@ export default function App() {
 
         <SectionBand title="Live detail" summary="live price/DEX cross-check + per-pool liquidity drift" defaultOpen={false}>
           <Panel label="Live cross-check">
-            <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} asOf={summary.as_of_date} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} onRefresh={refresh} />
+            <LiveCrossCheck live={live} snapshotCleanVol={summary.volume_24h_usd_clean} asOf={summary.as_of_date} enabled={liveEnabled} onToggle={() => setLiveEnabled((v) => !v)} onRefresh={handleRefresh} />
           </Panel>
           <Panel label="Live depth drift">
             <LiveDepthDrift live={live} ladders={ladders} snapshotMovable={study.verdict.movable_at_2pct_usd} snapshotTvl={summary.tvl_usd_total} asOf={summary.as_of_date} onOpenPool={openPool} />

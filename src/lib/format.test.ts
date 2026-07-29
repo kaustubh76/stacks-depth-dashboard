@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { usd0, usd, usdCompact, pct, signedPct, int, ago, daysSince, measuredLabel, shortHash } from "./format";
+import { usd0, usd, usdCompact, pct, signedPct, int, ago, daysSince, measuredLabel, shortHash, feedStatus } from "./format";
 
 describe("format.ts", () => {
   it("usd0: whole-dollar, thousands-separated, — for nullish/NaN", () => {
@@ -68,5 +68,21 @@ describe("format.ts", () => {
     expect(shortHash(null)).toBe("—");
     expect(shortHash("0123456789012")).toBe("0123456789012"); // 13 → full
     expect(shortHash("01234567890123")).toBe("0123456789…0123"); // 14 → truncated
+  });
+});
+
+describe("feedStatus (live-feed freshness → honest 'unavailable' instead of forever 'connecting')", () => {
+  const now = 1_000_000;
+  it("live when the feed answered within staleMs", () => {
+    expect(feedStatus(now - 5_000, now, now - 60_000)).toBe("live");
+  });
+  it("stale when the feed answered but is now older than staleMs", () => {
+    expect(feedStatus(now - 120_000, now, now - 200_000)).toBe("stale");
+  });
+  it("connecting when it never answered but is still inside the startup window", () => {
+    expect(feedStatus(null, now, now - 5_000)).toBe("connecting");
+  });
+  it("down when it never answered past the startup window", () => {
+    expect(feedStatus(null, now, now - 60_000)).toBe("down");
   });
 });

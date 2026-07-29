@@ -7,6 +7,7 @@ import AnimatedNumber from "../ui/AnimatedNumber";
 import { ChipButton } from "../ui/ChipButton";
 import ReasoningReveal, { TraceChip } from "../ui/ReasoningReveal";
 import { usd0, pct } from "../../lib/format";
+import { BUDGET_MAX } from "../../hooks/useHashState";
 
 const TARGET_CHIPS = [25000, 50000, 100000, 250000];
 const TARGET_STEP = 25000;
@@ -102,7 +103,7 @@ export default function VerdictBanner({
           </StatusPill>
         )}
         <span className="font-mono text-[12px] text-muted">
-          {nTradeable}/{minAssets} assets clear the {usd0(target)} bar
+          {nTradeable}/{minAssets} assets clear the {usd0(bar)} bar
         </span>
       </div>
       <p className="text-[15px] leading-relaxed text-sub">{verdict.finding}</p>
@@ -167,14 +168,20 @@ export default function VerdictBanner({
                   <span>
                     Or loosen the budget: rotation would clear at{" "}
                     <b className="text-ink">≤{pct(viableBudget, viableBudget < 0.01 ? 2 : 1)}</b> slippage.
-                    <button
-                      type="button"
-                      onClick={() => setBudget(viableBudget)}
-                      aria-label="Set the slippage budget to the level where rotation clears"
-                      className="ml-1.5 rounded-sm border border-edge px-1.5 py-px font-mono text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
-                    >
-                      set budget →
-                    </button>
+                    {viableBudget <= BUDGET_MAX ? (
+                      <button
+                        type="button"
+                        onClick={() => setBudget(viableBudget)}
+                        aria-label="Set the slippage budget to the level where rotation clears"
+                        className="ml-1.5 rounded-sm border border-edge px-1.5 py-px font-mono text-[10px] uppercase tracking-wide text-muted transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/50"
+                      >
+                        set budget →
+                      </button>
+                    ) : (
+                      <span className="ml-1.5 font-mono text-[10px] uppercase tracking-wide text-muted">
+                        — beyond this tool’s ≤{pct(BUDGET_MAX, 0)} range
+                      </span>
+                    )}
                   </span>
                 ) : (
                   <span>

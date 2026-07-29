@@ -11,6 +11,26 @@ const ladder = (over: Partial<DepthLadder> = {}): DepthLadder => ({
   venue: "v", pool_id: "p", symbol: "S", major_symbol: "STX", tvl_usd: 0, depth_2pct_usd: 0, points: [], ...over,
 });
 
+// A malformed LIVE /api/stacks/depth payload could carry a ladder with empty `points[]`. The data
+// loader now rejects that before overriding baked, but the compute core must ALSO never throw on it.
+describe("empty points never throw (live-payload robustness)", () => {
+  const empty = ladder({ major_symbol: "STX", points: [] });
+  it("maxNotionalAt returns 0 for empty points (no throw)", () => {
+    expect(() => maxNotionalAt([], 0.02)).not.toThrow();
+    expect(maxNotionalAt([], 0.02)).toBe(0);
+  });
+  it("planTrade with an empty-points pool doesn't throw and reports not-feasible", () => {
+    let plan!: ReturnType<typeof planTrade>;
+    expect(() => (plan = planTrade([empty], "STX", 10_000, 0.02))).not.toThrow();
+    expect(plan.best?.feasible ?? false).toBe(false);
+  });
+  it("realizedForNotional with an empty-points pool doesn't throw", () => {
+    let rows!: ReturnType<typeof realizedForNotional>;
+    expect(() => (rows = realizedForNotional([empty], 10_000))).not.toThrow();
+    if (rows.length) expect(rows[0].feasible).toBe(false);
+  });
+});
+
 describe("slippageTrace", () => {
   const p = pts([[100, 0], [200, 0.1]]);
   it("interpolates the midpoint exactly", () => {

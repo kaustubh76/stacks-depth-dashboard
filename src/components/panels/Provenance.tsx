@@ -5,7 +5,8 @@ import { TRACE_CLAIM_EVENT } from "../../lib/cockpit";
 import Card from "../ui/Card";
 import CopyButton from "../ui/CopyButton";
 
-function fmtValue(v: number | string | boolean): string {
+function fmtValue(v: number | string | boolean | null | undefined): string {
+  if (v === null || v === undefined) return "—"; // a null claim value must not render the string "null"
   if (typeof v === "number") return v.toLocaleString("en-US");
   return String(v);
 }

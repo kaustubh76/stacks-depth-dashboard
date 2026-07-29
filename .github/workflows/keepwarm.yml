@@ -11,7 +11,8 @@ on:
     - cron: "*/13 * * * *" # ~every 13 minutes (UTC); dyno idles at 15 min
   workflow_dispatch: {}
 
-permissions: {} # least privilege — a curl needs nothing
+permissions:
+  issues: write # to file a "data stale" alert if the harvest silently stops (see the last step)
 
 concurrency:
   group: keepwarm
@@ -24,3 +25,27 @@ jobs:
     steps:
       - name: Ping /health
         run: curl -sfS --max-time 30 --retry 2 https://stacks-depth-api.onrender.com/health || true
+
+      # A cron that never fires never "fails", so reharvest.yml's if:failure() can't catch a silently
+      # stopped harvest. /health reports the served `as_of`; if the data is >2 days old, file ONE issue
+      # (create-if-absent — never comment on repeat, so no 13-min spam). GH_REPO lets gh work w/o a checkout.
+      - name: Alert if data has gone stale
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          as_of=$(curl -sf --max-time 30 https://stacks-depth-api.onrender.com/health \
+            | python3 -c "import sys,json;print(json.load(sys.stdin).get('as_of',''))" 2>/dev/null || true)
+          if [ -z "$as_of" ]; then echo "no as_of (API cold/down) — skipping staleness check"; exit 0; fi
+          age=$(python3 -c "import datetime;print((datetime.date.today()-datetime.date.fromisoformat('$as_of')).days)" 2>/dev/null || echo 0)
+          echo "served data as_of $as_of · ${age}d old"
+          if [ "$age" -gt 2 ]; then
+            title="Data stale"
+            open=$(gh issue list --state open --search "$title in:title" --json number --jq '.[0].number' 2>/dev/null || true)
+            if [ -z "$open" ]; then
+              gh issue create --title "$title" \
+                --body "The served dataset is ${age} days old (as_of $as_of). The 6h re-harvest cron may have stopped firing — check the 're-harvest stacks depth' workflow. (Auto-filed by keep-warm; will not duplicate while open.)" || true
+            else
+              echo "stale issue #$open already open — not duplicating"
+            fi
+          fi

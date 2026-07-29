@@ -1,4 +1,4 @@
-import type { Summary, Verdict } from "../../api/types";
+import type { Summary } from "../../api/types";
 import CountUp from "../ui/CountUp";
 import { flashSection, sectionId } from "../../lib/sections";
 import { usd0, int } from "../../lib/format";
@@ -17,10 +17,10 @@ interface Tile {
 /** Context stats for the ecosystem (NOT the answer — that's the verdict). Each tile jumps to the
  * section with the full story. The movable + tradeable figures live in the verdict/budget control,
  * so they're intentionally not repeated here. */
-export default function HeadlineTiles({ summary }: { summary: Summary; verdict?: Verdict }) {
+export default function HeadlineTiles({ summary }: { summary: Summary }) {
   const tiles: Tile[] = [
     { label: "Pools tracked", value: summary.pools_total, format: int, plain: "ALEX · Velar · Bitflow", target: "All pools" },
-    { label: "Trading in 24h", value: summary.pools_live, format: int, plain: `${Math.round((summary.pools_live / summary.pools_total) * 100)}% of pools are live`, color: "#43b581", target: "All pools" },
+    { label: "Trading in 24h", value: summary.pools_live, format: int, plain: `${summary.pools_total > 0 ? Math.round((summary.pools_live / summary.pools_total) * 100) : 0}% of pools are live`, color: "#43b581", target: "All pools" },
     { label: "Total TVL", value: summary.tvl_usd_total, format: usd0, plain: "on-chain reserves", target: "All pools" },
     { label: "Clean 24h volume", value: summary.volume_24h_usd_clean, format: usd0, plain: "ex-flagged · see data quality", target: "The evidence" },
   ];

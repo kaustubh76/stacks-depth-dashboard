@@ -6,7 +6,7 @@ import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
 import Sparkline from "../ui/Sparkline";
-import { usd0, usd, int, ago } from "../../lib/format";
+import { usd0, usd, int, ago, feedStatus } from "../../lib/format";
 
 function Delta({ v }: { v: number | null }) {
   if (v === null) return null;
@@ -43,7 +43,9 @@ function LiveTile({
       <div className="mt-1.5 font-display text-xl font-bold tabular-nums text-ink">{children}</div>
       <div className="mt-1 flex items-center justify-between gap-2 font-mono text-[10px] text-muted">
         <span>{source}</span>
-        <span>{updated ? ago(updated, now) : "…"}</span>
+        <span style={updated !== null && now - updated > 90_000 ? { color: "rgb(var(--c-warn))" } : undefined}>
+          {updated ? ago(updated, now) : "…"}
+        </span>
       </div>
     </div>
   );
@@ -71,6 +73,15 @@ export default function LiveCrossCheck({
 }) {
   const now = useNow(1000);
 
+  // Feed health: mark the (re)start so a feed that never answers flips to "unavailable" after a
+  // timeout instead of "CONNECTING…" forever, and a once-live feed that goes quiet reads "stale".
+  const startedAt = useRef(Date.now());
+  useEffect(() => {
+    if (enabled) startedAt.current = Date.now();
+  }, [enabled]);
+  const lastUpdate = Math.max(live.updatedChain ?? 0, live.updatedPrice ?? 0, live.updatedDex ?? 0);
+  const feeds = feedStatus(lastUpdate > 0 ? lastUpdate : null, now, startedAt.current);
+
   // Flash the block tile the moment a new Stacks block lands.
   const prevHeight = useRef<number | null>(null);
   const [blockPulse, setBlockPulse] = useState(false);
@@ -95,14 +106,16 @@ export default function LiveCrossCheck({
       tier="supporting"
       right={
         <div className="flex items-center gap-2">
-          {enabled && live.anyLive ? (
-            <StatusPill tone="up" dot pulse srText="live data from public feeds">
-              LIVE
-            </StatusPill>
+          {!enabled ? (
+            <StatusPill tone="neutral" dot srText="live feeds paused">PAUSED</StatusPill>
+          ) : feeds === "live" ? (
+            <StatusPill tone="up" dot pulse srText="live data from public feeds">LIVE</StatusPill>
+          ) : feeds === "stale" ? (
+            <StatusPill tone="warn" dot srText="live feeds are stale — showing the last values">STALE</StatusPill>
+          ) : feeds === "down" ? (
+            <StatusPill tone="down" dot srText="live feeds unavailable — the snapshot below stands">UNAVAILABLE</StatusPill>
           ) : (
-            <StatusPill tone="neutral" dot srText={enabled ? "connecting to live feeds" : "live feeds paused"}>
-              {enabled ? "CONNECTING" : "PAUSED"}
-            </StatusPill>
+            <StatusPill tone="neutral" dot srText="connecting to live feeds">CONNECTING</StatusPill>
           )}
           <button
             type="button"

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 
 import type { DepthLadder } from "../../api/types";
 import type { LiveState } from "../../hooks/useLiveData";
@@ -7,7 +7,7 @@ import { useNow } from "../../hooks/useNow";
 import Card from "../ui/Card";
 import StatusPill from "../ui/StatusPill";
 import AnimatedNumber from "../ui/AnimatedNumber";
-import { usd0, usdCompact, ago } from "../../lib/format";
+import { usd0, usdCompact, ago, feedStatus } from "../../lib/format";
 import { UP, DOWN, MUTED } from "../../lib/colors";
 
 function Drift({ pctVal }: { pctVal: number | null }) {
@@ -46,15 +46,34 @@ export default function LiveDepthDrift({
   const pools = useMemo(() => snapshotPools(ladders), [ladders]);
   const drift = useMemo(() => matchDrift(pools, live.dexPairs, snapshotMovable), [pools, live.dexPairs, snapshotMovable]);
   const hasLive = drift.matched > 0;
+  // Distinguish "matched live pairs" from "DexScreener answered but nothing matched" from "the feed is
+  // down" — so a genuine feed failure reads "unavailable" instead of "RE-QUOTING…" forever.
+  const startedAt = useRef(Date.now());
+  const dexDown = live.updatedDex === null && feedStatus(live.updatedDex, now, startedAt.current) === "down";
+  const state: "live" | "nomatch" | "down" | "connecting" = hasLive
+    ? "live"
+    : live.updatedDex !== null
+      ? "nomatch"
+      : dexDown
+        ? "down"
+        : "connecting";
 
   return (
     <Card
       label="Live depth drift"
       tier="supporting"
       right={
-        hasLive ? (
+        state === "live" ? (
           <StatusPill tone="up" dot pulse srText="live liquidity from DexScreener">
             LIVE · {ago(live.updatedDex, now)}
+          </StatusPill>
+        ) : state === "down" ? (
+          <StatusPill tone="down" dot srText="DexScreener unavailable — the snapshot stands">
+            UNAVAILABLE
+          </StatusPill>
+        ) : state === "nomatch" ? (
+          <StatusPill tone="neutral" dot srText="no live DexScreener match for the snapshot pools">
+            NO LIVE MATCH
           </StatusPill>
         ) : (
           <StatusPill tone="neutral" dot srText="re-quoting live liquidity">
@@ -70,8 +89,12 @@ export default function LiveDepthDrift({
       </p>
 
       {!hasLive ? (
-        <div className="flex h-24 items-center justify-center rounded-sm border border-edge bg-panel2/40 font-mono text-[12px] text-muted">
-          re-quoting live liquidity from public feeds…
+        <div className="flex h-24 items-center justify-center rounded-sm border border-edge bg-panel2/40 px-3 text-center font-mono text-[12px] text-muted">
+          {state === "down"
+            ? "DexScreener is unavailable right now — the measured snapshot below stands."
+            : state === "nomatch"
+              ? "No live DexScreener match for the snapshot pools right now."
+              : "re-quoting live liquidity from public feeds…"}
         </div>
       ) : (
         <>

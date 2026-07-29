@@ -154,7 +154,7 @@ export function realizedForNotional(ladders: DepthLadder[], notional: number): A
         bestPool: best.pool.pool_id,
         bestPoolSymbol: best.pool.symbol,
         slippage: best.slip,
-        feasible: notional <= best.pool.points[best.pool.points.length - 1].notional,
+        feasible: !!best.pool.points?.length && notional <= best.pool.points[best.pool.points.length - 1].notional,
       });
     }
   }
@@ -200,7 +200,7 @@ export function planTrade(ladders: DepthLadder[], asset: string, size: number, b
     }
   }
   if (!bestPool) return base;
-  const feasible = size <= bestPool.points[bestPool.points.length - 1].notional;
+  const feasible = !!bestPool.points?.length && size <= bestPool.points[bestPool.points.length - 1].notional;
   const withinBudget = feasible && bestSlip <= budget;
   base.best = {
     leg: { key: poolKey(bestPool), venue: bestPool.venue, symbol: bestPool.symbol, notional: size, slippage: bestSlip },

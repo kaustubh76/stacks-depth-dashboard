@@ -60,14 +60,20 @@ export async function fetchLive(signal?: AbortSignal): Promise<StacksData | null
     let ladders = BAKED.ladders; // per-pool ladders fall back to the baked derivation
     if (depthRes && depthRes.ok) {
       const dl = (await depthRes.json()) as DepthLadder[];
-      if (Array.isArray(dl) && dl.length > 0) ladders = dl;
+      // Only override baked if EVERY ladder is well-formed (non-empty points[]) — a malformed live
+      // payload must not blank the curves or crash the slippage math (which reads points[last]).
+      if (Array.isArray(dl) && dl.length > 0 && dl.every((l) => Array.isArray(l?.points) && l.points.length > 0)) {
+        ladders = dl;
+      }
     }
     return {
       summary: d.summary as Summary,
       study: d.study as Study,
       facts: (d.facts as Facts) ?? BAKED.facts,
       ladders,
-      history: (d.history as HistoryPoint[] | undefined) ?? BAKED.history,
+      // An empty array must NOT override the baked series (going live would blank the trend panels);
+      // only a non-empty live history replaces baked. `?? ` alone misses `[]`.
+      history: Array.isArray(d.history) && d.history.length ? (d.history as HistoryPoint[]) : BAKED.history,
       live: true,
     };
   } catch {

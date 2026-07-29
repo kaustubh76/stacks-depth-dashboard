@@ -70,9 +70,22 @@ export default function Tour() {
     const step = steps[idx];
     const el = step && document.getElementById(step.id);
     if (!el) return;
-    el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
     const measure = () => setRect(el.getBoundingClientRect());
-    measure();
+    const reveal = () => {
+      el.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+      measure();
+    };
+    // If the target sits inside a collapsed SectionBand, expand it FIRST (the same event flashSection
+    // dispatches) — otherwise scrollIntoView/getBoundingClientRect hit a display:none zero-rect and the
+    // spotlight collapses to a 12px hole with no visible panel. Then scroll/measure after it opens.
+    const band = el.closest<HTMLElement>("[data-band-id]");
+    let openTimer = 0;
+    if (band) {
+      window.dispatchEvent(new CustomEvent("sd:open-section", { detail: { bandId: band.getAttribute("data-band-id") } }));
+      openTimer = window.setTimeout(reveal, 110);
+    } else {
+      reveal();
+    }
     let raf = 0;
     const onMove = () => {
       cancelAnimationFrame(raf);
@@ -80,12 +93,13 @@ export default function Tour() {
     };
     window.addEventListener("scroll", onMove, { passive: true });
     window.addEventListener("resize", onMove);
-    const settle = window.setTimeout(measure, 420);
+    const settle = window.setTimeout(measure, 480); // re-measure after band-expand + scroll settle
     return () => {
       window.removeEventListener("scroll", onMove);
       window.removeEventListener("resize", onMove);
       cancelAnimationFrame(raf);
       window.clearTimeout(settle);
+      window.clearTimeout(openTimer);
     };
   }, [open, idx, steps, reduce]);
 

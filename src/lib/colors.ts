@@ -5,5 +5,4 @@
 // fills or decorative accents (those stay bright hex and are exempt from text-contrast rules).
 export const UP = "rgb(var(--c-up))"; // green — clears the bar / positive
 export const DOWN = "rgb(var(--c-down))"; // rose — shortfall / negative / over budget
-export const WARN = "rgb(var(--c-warn))"; // gold — caution
 export const MUTED = "rgb(var(--c-muted))"; // de-emphasized grey (was #8a8f9c "no fill")
