@@ -1,6 +1,6 @@
 {
   "as_of_date": "2026-08-02",
-  "as_of_ts": 1785676566,
+  "as_of_ts": 1785697809,
   "audit": {
     "finding": "Rolling-window audit, 2 assets (STX + BTC/sBTC proxy) over 365 daily bars: a long-only momentum rotation returns -63% total at a realistic 2% one-way friction, with only 15% of weekly windows positive. No edge \u2014 and with just 2 liquid, non-independent assets there is no third thing to rotate into. Corroborates the depth verdict from a second angle.",
     "friction_flip_one_way": 0.001,
@@ -72,60 +72,60 @@
   "depth_index": {
     "by_asset": {
       "STX": {
-        "0.005": 15428.53,
-        "0.010": 21358.95,
-        "0.020": 33259.24,
-        "0.050": 48710.63
+        "0.005": 15448.83,
+        "0.010": 21415.17,
+        "0.020": 33387.56,
+        "0.050": 48789.19
       },
       "USDh": {
         "0.005": 117.65,
         "0.010": 135.3,
         "0.020": 170.6,
-        "0.050": 276.5
+        "0.050": 276.49
       },
       "aBTC": {
-        "0.005": 250.63,
-        "0.010": 401.26,
-        "0.020": 708.58,
-        "0.050": 1681.86
+        "0.005": 246.86,
+        "0.010": 393.72,
+        "0.020": 693.23,
+        "0.050": 1642.59
       },
       "aeUSDC": {
-        "0.005": 617.01,
-        "0.010": 734.05,
-        "0.020": 968.07,
-        "0.050": 1689.47
+        "0.005": 624.18,
+        "0.010": 748.38,
+        "0.020": 996.76,
+        "0.050": 1761.21
       },
       "sBTC": {
-        "0.005": 7622.95,
-        "0.010": 13309.87,
-        "0.020": 23139.85,
-        "0.050": 35305.32
+        "0.005": 7239.51,
+        "0.010": 12656.96,
+        "0.020": 21602.47,
+        "0.050": 33164.51
       }
     },
     "by_threshold": {
       "0.005": {
         "deepest_pool": "bitflow:stableswap:1",
-        "deepest_pool_usd": 10108.56,
+        "deepest_pool_usd": 10125.63,
         "pools_with_any_depth": 50,
-        "total_movable_usd": 24036.77
+        "total_movable_usd": 23677.03
       },
       "0.010": {
         "deepest_pool": "bitflow:stableswap:1",
-        "deepest_pool_usd": 14408.18,
+        "deepest_pool_usd": 14457.7,
         "pools_with_any_depth": 50,
-        "total_movable_usd": 35939.43
+        "total_movable_usd": 35349.53
       },
       "0.020": {
         "deepest_pool": "bitflow:stableswap:1",
-        "deepest_pool_usd": 23007.42,
+        "deepest_pool_usd": 23121.85,
         "pools_with_any_depth": 50,
-        "total_movable_usd": 58246.34
+        "total_movable_usd": 56850.62
       },
       "0.050": {
         "deepest_pool": "bitflow:stableswap:2",
-        "deepest_pool_usd": 33924.85,
+        "deepest_pool_usd": 31832.65,
         "pools_with_any_depth": 50,
-        "total_movable_usd": 87663.78
+        "total_movable_usd": 85633.99
       }
     },
     "pools": 48
@@ -134,16 +134,16 @@
     "dead_fraction": 0.4502,
     "flagged_pools": [
       {
-        "note": "turnover 807x/day \u2014 likely endpoint inconsistency",
+        "note": "turnover 866x/day \u2014 likely endpoint inconsistency",
         "pool_id": "alex:104",
         "symbol": "bridged-btc-bridged-usdt",
-        "volume_24h_usd": 48275236.56581991
+        "volume_24h_usd": 51133409.714682154
       }
     ],
     "pools_dead": 190,
-    "pools_live": 79,
+    "pools_live": 81,
     "pools_total": 422,
-    "tvl_usd_total": 1337452.0191510036,
+    "tvl_usd_total": 1347708.4917425374,
     "venues": {
       "alex": {
         "api_disagreements": 0,
@@ -153,9 +153,9 @@
         "live": 24,
         "pools": 168,
         "swaps_24h": 0,
-        "tvl_usd": 535666.9791500943,
-        "volume_24h_usd": 48281685.30997948,
-        "volume_24h_usd_dex": 4646.0
+        "tvl_usd": 537430.0960473161,
+        "volume_24h_usd": 51139774.972713456,
+        "volume_24h_usd_dex": 3520.5899999999997
       },
       "bitflow": {
         "api_disagreements": 0,
@@ -164,33 +164,33 @@
         "error": 0,
         "live": 48,
         "pools": 53,
-        "swaps_24h": 120,
-        "tvl_usd": 561457.5722856843,
-        "volume_24h_usd": 13097.630000000001,
-        "volume_24h_usd_dex": 13097.630000000001
+        "swaps_24h": 130,
+        "tvl_usd": 570795.6572911369,
+        "volume_24h_usd": 11060.84,
+        "volume_24h_usd_dex": 11060.84
       },
       "velar": {
         "api_disagreements": 0,
         "dead": 49,
-        "dormant": 145,
+        "dormant": 143,
         "error": 0,
-        "live": 7,
+        "live": 9,
         "pools": 201,
         "swaps_24h": 0,
-        "tvl_usd": 240327.46771522483,
-        "volume_24h_usd": 268.1370919791103,
-        "volume_24h_usd_dex": 1764.97
+        "tvl_usd": 239482.73840408417,
+        "volume_24h_usd": 277.60652200826996,
+        "volume_24h_usd_dex": 1412.7400000000002
       }
     },
-    "volume_24h_usd_clean": 19814.511251561344,
-    "volume_24h_usd_flagged": 48275236.56581991,
-    "volume_24h_usd_total": 48295051.07707147
+    "volume_24h_usd_clean": 17703.704553306103,
+    "volume_24h_usd_flagged": 51133409.714682154,
+    "volume_24h_usd_total": 51151113.41923546
   },
   "verdict": {
     "can_deploy_50k_at_2pct": true,
-    "deepest_single_pool_usd": 23007.42,
-    "finding": "Depth gauge: only $58,246 can move at \u22642% slippage across all of Stacks DeFi; the deepest single pool absorbs $23,007. Just 2 asset(s) clear the $10,000 depth bar (STX, sBTC) \u2014 below the 3 independent assets a cross-sectional rotation needs. Systematic trading on Stacks is NOT currently viable; this is the measured threshold at which that flips, published \u2014 not a one-shot verdict.",
-    "movable_at_2pct_usd": 58246.34,
+    "deepest_single_pool_usd": 23121.85,
+    "finding": "Depth gauge: only $56,851 can move at \u22642% slippage across all of Stacks DeFi; the deepest single pool absorbs $23,122. Just 2 asset(s) clear the $10,000 depth bar (STX, sBTC) \u2014 below the 3 independent assets a cross-sectional rotation needs. Systematic trading on Stacks is NOT currently viable; this is the measured threshold at which that flips, published \u2014 not a one-shot verdict.",
+    "movable_at_2pct_usd": 56850.62,
     "n_tradeable_assets": 2,
     "rotation_viable": false,
     "thresholds": {
